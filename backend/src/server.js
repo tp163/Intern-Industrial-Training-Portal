@@ -1,8 +1,10 @@
-const express = require("express");
-const cors = require("cors");
-require("dotenv").config();
+const express = require('express');
+const cors = require('cors');
+require('dotenv').config();
 
-const authRoutes = require("./auth/auth.routes");
+const authRoutes = require('./auth/auth.routes');
+const studentRoutes = require('./student/student.routes');
+const internshipRoutes = require('./internship/internship.routes');
 
 const app = express();
 
@@ -10,79 +12,19 @@ app.use(cors());
 app.use(express.json());
 
 
-// AUTH ROUTES
-app.use("/auth", authRoutes);
+app.use('/auth', authRoutes);
+app.use('/students', studentRoutes);
+app.use('/internships', internshipRoutes);
 
-
-app.get("/", (req, res) => {
-  res.send("Backend Running");
+app.get('/', (req, res) => {
+  res.send('Server Running');
 });
 
 
 
 
-const {
-  verifyToken,
-  checkRole
-} = require("./auth/auth.middleware");
+const PORT = process.env.PORT || 5000;
 
-// STUDENT DASHBOARD
-app.get(
-  "/student/dashboard",
-
-  verifyToken,
-
-  checkRole("STUDENT"),
-
-  (req, res) => {
-
-    res.json({
-      success: true,
-      message: "Welcome Student",
-      user: req.user
-    });
-
-  }
-);
-
-// ADMIN DASHBOARD
-app.get(
-  "/admin/dashboard",
-
-  verifyToken,
-
-  checkRole("ADMIN"),
-
-  (req, res) => {
-
-    res.json({
-      success: true,
-      message: "Welcome Admin",
-      user: req.user
-    });
-
-  }
-);
-
-// SUPERVISOR DASHBOARD
-app.get(
-  "/supervisor/dashboard",
-
-  verifyToken,
-
-  checkRole("SUPERVISOR"),
-
-  (req, res) => {
-
-    res.json({
-      success: true,
-      message: "Welcome Supervisor",
-      user: req.user
-    });
-
-  }
-);
-
-app.listen(5000, () => {
-  console.log("Server running on port 5000");
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
 });
