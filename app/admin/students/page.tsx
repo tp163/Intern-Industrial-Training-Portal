@@ -81,7 +81,7 @@ export default function AdminStudentsPage() {
                     <Avatar name={getInitials(student.name)} size="sm" color="primary" />
                     <div>
                       <p className="font-medium">{student.name}</p>
-                      <p className="text-xs text-default-500">{student.email}</p>
+                      <p className="text-xs text-text-secondary">{student.email}</p>
                     </div>
                   </div>
                 </TableCell>

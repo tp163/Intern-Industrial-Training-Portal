@@ -163,7 +163,7 @@ export default function SupervisorReviewsPage() {
                       </Button>
                     </div>
                   ) : (
-                    <span className="text-sm text-default-400">—</span>
+                    <span className="text-sm text-text-secondary">—</span>
                   )}
                 </TableCell>
               </TableRow>
@@ -206,9 +206,9 @@ export default function SupervisorReviewsPage() {
           <div className="space-y-4">
             <div>
               <p className="font-medium">{selected.title}</p>
-              <p className="text-sm text-default-500">{selected.studentName}</p>
+              <p className="text-sm text-text-secondary">{selected.studentName}</p>
             </div>
-            <p className="rounded-lg bg-default-100 p-3 text-sm">{selected.content}</p>
+            <p className="rounded-lg bg-surface-sidebar p-3 text-sm">{selected.content}</p>
             {action === "approve" && (
               <Input
                 label="Score (optional)"

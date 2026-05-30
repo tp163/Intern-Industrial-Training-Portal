@@ -46,7 +46,7 @@ export default function SupervisorReportsPage() {
       <div className="space-y-4">
         {filtered.length === 0 ? (
           <ContentCard>
-            <p className="py-8 text-center text-sm text-default-500">No reports found</p>
+            <p className="py-8 text-center text-sm text-text-secondary">No reports found</p>
           </ContentCard>
         ) : (
           filtered.map((report) => (
@@ -60,7 +60,7 @@ export default function SupervisorReportsPage() {
                         Week {report.week}
                       </Chip>
                     </div>
-                    <p className="text-sm text-default-500">
+                    <p className="text-sm text-text-secondary">
                       Submitted {formatDate(report.submittedAt)}
                     </p>
                   </div>
@@ -71,7 +71,7 @@ export default function SupervisorReportsPage() {
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
-                    <p className="mb-2 text-xs font-semibold uppercase text-default-400">
+                    <p className="mb-2 text-xs font-semibold uppercase text-text-secondary">
                       Achievements
                     </p>
                     <ul className="space-y-1 text-sm">
@@ -84,7 +84,7 @@ export default function SupervisorReportsPage() {
                     </ul>
                   </div>
                   <div>
-                    <p className="mb-2 text-xs font-semibold uppercase text-default-400">
+                    <p className="mb-2 text-xs font-semibold uppercase text-text-secondary">
                       Challenges
                     </p>
                     <ul className="space-y-1 text-sm">

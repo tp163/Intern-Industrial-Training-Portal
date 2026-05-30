@@ -1,9 +1,11 @@
 "use client";
 
 import {
+  AlertCircle,
+  BarChart3,
+  BookOpen,
   Briefcase,
   Building2,
-  BarChart3,
   CheckCircle,
   ClipboardList,
   Clock,
@@ -11,6 +13,7 @@ import {
   FileText,
   GraduationCap,
   LayoutDashboard,
+  Rocket,
   Settings,
   TrendingUp,
   User,
@@ -25,6 +28,7 @@ const iconMap: Record<string, LucideIcon> = {
   FileText,
   ClipboardList,
   Briefcase,
+  BookOpen,
   Users,
   FileCheck,
   BarChart3,
@@ -35,6 +39,8 @@ const iconMap: Record<string, LucideIcon> = {
   CheckCircle,
   TrendingUp,
   Clock,
+  Rocket,
+  AlertCircle,
 };
 
 export function DynamicIcon({

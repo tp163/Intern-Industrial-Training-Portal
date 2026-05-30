@@ -1,6 +1,7 @@
 "use client";
 
 import { AuthLayout } from "@/components/auth/auth-layout";
+import { formFieldClassNames } from "@/lib/utils";
 import { Button, Input, Link } from "@heroui/react";
 import { ArrowLeft, CheckCircle } from "lucide-react";
 import NextLink from "next/link";
@@ -32,7 +33,7 @@ export default function ForgotPasswordPage() {
           </div>
           <div>
             <h3 className="text-lg font-semibold">Check your email</h3>
-            <p className="mt-2 text-sm text-default-500">
+            <p className="mt-2 text-sm text-text-secondary">
               We sent a password reset link to <strong>{email}</strong>
             </p>
           </div>
@@ -51,6 +52,7 @@ export default function ForgotPasswordPage() {
             variant="bordered"
             radius="lg"
             isRequired
+            classNames={formFieldClassNames}
           />
 
           <Button type="submit" color="primary" size="lg" radius="lg" className="w-full font-semibold" isLoading={loading}>

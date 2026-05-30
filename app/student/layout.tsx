@@ -9,6 +9,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       roleLabel={roleLabels.student}
       userName={currentStudent.name}
       userEmail={currentStudent.email}
+      variant="portal"
+      userRoleBadge="Student Intern"
     >
       {children}
     </DashboardLayout>

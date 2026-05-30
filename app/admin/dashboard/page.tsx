@@ -26,13 +26,13 @@ export default function AdminDashboardPage() {
             {analyticsData.monthlyApplications.map((item) => (
               <div key={item.month} className="flex flex-1 flex-col items-center gap-2">
                 <div className="flex w-full flex-col items-center justify-end" style={{ height: "160px" }}>
-                  <span className="mb-1 text-xs font-medium text-default-600">{item.count}</span>
+                  <span className="mb-1 text-xs font-medium text-text-primary">{item.count}</span>
                   <div
                     className="w-full max-w-12 rounded-t-lg bg-primary transition-all"
                     style={{ height: `${(item.count / maxCount) * 100}%`, minHeight: "8px" }}
                   />
                 </div>
-                <span className="text-xs font-medium text-default-500">{item.month}</span>
+                <span className="text-xs font-medium text-text-secondary">{item.month}</span>
               </div>
             ))}
           </div>
@@ -47,11 +47,11 @@ export default function AdminDashboardPage() {
                 <div key={item.status}>
                   <div className="mb-1 flex justify-between text-sm">
                     <span>{item.status}</span>
-                    <span className="text-default-500">
+                    <span className="text-text-secondary">
                       {item.count} ({pct}%)
                     </span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-default-100">
+                  <div className="h-2 overflow-hidden rounded-full bg-surface-sidebar">
                     <div
                       className="h-full rounded-full transition-all"
                       style={{ width: `${pct}%`, backgroundColor: item.color }}
@@ -71,13 +71,13 @@ export default function AdminDashboardPage() {
             const pct = (company.applications / maxApps) * 100;
             return (
               <div key={company.name} className="flex items-center gap-4">
-                <span className="w-6 text-sm font-medium text-default-400">{i + 1}</span>
+                <span className="w-6 text-sm font-medium text-text-secondary">{i + 1}</span>
                 <div className="min-w-0 flex-1">
                   <div className="mb-1 flex justify-between text-sm">
                     <span className="font-medium">{company.name}</span>
-                    <span className="text-default-500">{company.applications}</span>
+                    <span className="text-text-secondary">{company.applications}</span>
                   </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-default-100">
+                  <div className="h-2 overflow-hidden rounded-full bg-surface-sidebar">
                     <div
                       className="h-full rounded-full bg-primary"
                       style={{ width: `${pct}%` }}

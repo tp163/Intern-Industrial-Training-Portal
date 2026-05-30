@@ -50,17 +50,17 @@ export default function SupervisorDashboardPage() {
         >
           <div className="space-y-3">
             {pendingReviews.length === 0 ? (
-              <p className="py-4 text-center text-sm text-default-500">No pending reviews</p>
+              <p className="py-4 text-center text-sm text-text-secondary">No pending reviews</p>
             ) : (
               pendingReviews.slice(0, 4).map((review) => (
                 <div
                   key={review.id}
-                  className="flex items-center justify-between rounded-xl border border-default-200 p-4"
+                  className="flex items-center justify-between rounded-button border border-border p-4"
                 >
                   <div>
                     <p className="font-medium">{review.title}</p>
-                    <p className="text-sm text-default-500">{review.studentName}</p>
-                    <p className="mt-1 text-xs text-default-400">
+                    <p className="text-sm text-text-secondary">{review.studentName}</p>
+                    <p className="mt-1 text-xs text-text-secondary">
                       Submitted {formatDate(review.submittedAt)}
                     </p>
                   </div>
@@ -89,17 +89,17 @@ export default function SupervisorDashboardPage() {
             {assignedStudents.slice(0, 5).map((student) => (
               <div
                 key={student.id}
-                className="flex items-center gap-3 rounded-xl border border-default-200 p-4"
+                className="flex items-center gap-3 rounded-button border border-border p-4"
               >
                 <Avatar name={getInitials(student.name)} size="sm" color="primary" />
                 <div className="min-w-0 flex-1">
                   <p className="font-medium">{student.name}</p>
-                  <p className="text-sm text-default-500">
+                  <p className="text-sm text-text-secondary">
                     {student.program} · Year {student.year}
                   </p>
                 </div>
                 {student.gpa && (
-                  <span className="text-sm font-medium text-default-600">GPA {student.gpa}</span>
+                  <span className="text-sm font-medium text-text-primary">GPA {student.gpa}</span>
                 )}
               </div>
             ))}

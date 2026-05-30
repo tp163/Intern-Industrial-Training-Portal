@@ -1,6 +1,7 @@
 "use client";
 
-import { ContentCard, EmptyState, PageHeader } from "@/components/ui/page-header";
+import { PortalPageHeader } from "@/components/student/portal-page-header";
+import { ContentCard, EmptyState } from "@/components/ui/page-header";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchBar } from "@/components/ui/search-bar";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -53,8 +54,8 @@ export default function StudentApplicationsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="My Applications"
+      <PortalPageHeader
+        title="Logbook"
         description="Track the status of your internship applications"
       />
 

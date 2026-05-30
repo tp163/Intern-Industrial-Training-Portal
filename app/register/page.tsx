@@ -2,6 +2,7 @@
 
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { roleDashboardPaths } from "@/lib/navigation";
+import { formFieldClassNames } from "@/lib/utils";
 import { Button, Input, Link, Select, SelectItem } from "@heroui/react";
 import { Eye, EyeOff } from "lucide-react";
 import NextLink from "next/link";
@@ -35,6 +36,7 @@ export default function RegisterPage() {
           }}
           variant="bordered"
           radius="lg"
+          classNames={formFieldClassNames}
         >
           <SelectItem key="student">Student</SelectItem>
           <SelectItem key="supervisor">Supervisor</SelectItem>
@@ -42,8 +44,8 @@ export default function RegisterPage() {
         </Select>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Input label="First Name" placeholder="John" variant="bordered" radius="lg" isRequired />
-          <Input label="Last Name" placeholder="Doe" variant="bordered" radius="lg" isRequired />
+          <Input label="First Name" placeholder="John" variant="bordered" radius="lg" isRequired classNames={formFieldClassNames} />
+          <Input label="Last Name" placeholder="Doe" variant="bordered" radius="lg" isRequired classNames={formFieldClassNames} />
         </div>
 
         <Input
@@ -53,14 +55,15 @@ export default function RegisterPage() {
           variant="bordered"
           radius="lg"
           isRequired
+          classNames={formFieldClassNames}
         />
 
         {role === "student" && (
-          <Input label="Student ID" placeholder="STU2024001" variant="bordered" radius="lg" isRequired />
+          <Input label="Student ID" placeholder="STU2024001" variant="bordered" radius="lg" isRequired classNames={formFieldClassNames} />
         )}
 
         {role === "supervisor" && (
-          <Input label="Department" placeholder="Computer Science" variant="bordered" radius="lg" isRequired />
+          <Input label="Department" placeholder="Computer Science" variant="bordered" radius="lg" isRequired classNames={formFieldClassNames} />
         )}
 
         <Input
@@ -70,11 +73,12 @@ export default function RegisterPage() {
           variant="bordered"
           radius="lg"
           isRequired
+          classNames={formFieldClassNames}
           endContent={
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="text-default-400 hover:text-default-600"
+              className="text-text-secondary hover:text-text-primary"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -89,13 +93,14 @@ export default function RegisterPage() {
           variant="bordered"
           radius="lg"
           isRequired
+          classNames={formFieldClassNames}
         />
 
         <Button type="submit" color="primary" size="lg" radius="lg" className="w-full font-semibold" isLoading={loading}>
           Create Account
         </Button>
 
-        <p className="text-center text-sm text-default-500">
+        <p className="text-center text-sm text-text-secondary">
           Already have an account?{" "}
           <Link as={NextLink} href="/login" size="sm" color="primary">
             Sign in

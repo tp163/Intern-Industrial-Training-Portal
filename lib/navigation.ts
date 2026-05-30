@@ -2,10 +2,10 @@ import type { NavItem } from "@/types";
 
 export const studentNavItems: NavItem[] = [
   { label: "Dashboard", href: "/student/dashboard", icon: "LayoutDashboard" },
-  { label: "Profile", href: "/student/profile", icon: "User" },
-  { label: "CV", href: "/student/cv", icon: "FileText" },
-  { label: "Applications", href: "/student/applications", icon: "ClipboardList" },
-  { label: "Internships", href: "/student/internships", icon: "Briefcase" },
+  { label: "Placements", href: "/student/internships", icon: "Briefcase" },
+  { label: "Logbook", href: "/student/applications", icon: "BookOpen" },
+  { label: "Company Directory", href: "/student/companies", icon: "Building2" },
+  { label: "Assessments", href: "/student/cv", icon: "BarChart3" },
 ];
 
 export const supervisorNavItems: NavItem[] = [

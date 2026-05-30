@@ -26,17 +26,17 @@ export default function AdminReportsPage() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <ContentCard>
-          <p className="text-sm text-default-500">Total Applications</p>
+          <p className="text-sm text-text-secondary">Total Applications</p>
           <p className="mt-1 text-3xl font-bold">{totalApplications}</p>
         </ContentCard>
         <ContentCard>
-          <p className="text-sm text-default-500">This Month</p>
+          <p className="text-sm text-text-secondary">This Month</p>
           <p className="mt-1 text-3xl font-bold">
             {analyticsData.monthlyApplications.at(-1)?.count ?? 0}
           </p>
         </ContentCard>
         <ContentCard>
-          <p className="text-sm text-default-500">Active Listings</p>
+          <p className="text-sm text-text-secondary">Active Listings</p>
           <p className="mt-1 text-3xl font-bold">34</p>
         </ContentCard>
       </div>
@@ -52,14 +52,14 @@ export default function AdminReportsPage() {
                 >
                   <span className="mb-1 text-xs font-medium">{item.count}</span>
                   <div
-                    className="w-full rounded-t-md bg-secondary"
+                    className="w-full rounded-t-md bg-primary"
                     style={{
                       height: `${(item.count / maxMonthly) * 100}%`,
                       minHeight: "6px",
                     }}
                   />
                 </div>
-                <span className="text-xs text-default-500">{item.month}</span>
+                <span className="text-xs text-text-secondary">{item.month}</span>
               </div>
             ))}
           </div>
@@ -111,13 +111,13 @@ export default function AdminReportsPage() {
             const max = analyticsData.topCompanies[0].applications;
             return (
               <div key={company.name} className="flex items-center gap-4">
-                <span className="w-8 text-lg font-bold text-default-300">#{i + 1}</span>
+                <span className="w-8 text-lg font-bold text-text-secondary/50">#{i + 1}</span>
                 <div className="flex-1">
                   <div className="mb-1 flex justify-between">
                     <span className="font-medium">{company.name}</span>
-                    <span className="text-default-500">{company.applications} apps</span>
+                    <span className="text-text-secondary">{company.applications} apps</span>
                   </div>
-                  <div className="h-2 rounded-full bg-default-100">
+                  <div className="h-2 rounded-full bg-surface-sidebar">
                     <div
                       className="h-full rounded-full bg-primary"
                       style={{ width: `${(company.applications / max) * 100}%` }}

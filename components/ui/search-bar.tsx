@@ -22,12 +22,16 @@ export function SearchBar({
       placeholder={placeholder}
       value={value}
       onValueChange={onChange}
-      startContent={<Search className="text-default-400" size={18} />}
+      startContent={<Search className="text-text-secondary" size={18} />}
       variant="bordered"
       radius="lg"
       size="md"
       isClearable
       onClear={() => onChange("")}
+      classNames={{
+        inputWrapper: "border-border bg-surface-card shadow-none rounded-input",
+        input: "text-text-primary placeholder:text-text-secondary",
+      }}
     />
   );
 }

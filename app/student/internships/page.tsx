@@ -1,7 +1,8 @@
 "use client";
 
 import { AppModal } from "@/components/ui/app-modal";
-import { ContentCard, EmptyState, PageHeader } from "@/components/ui/page-header";
+import { PortalPageHeader } from "@/components/student/portal-page-header";
+import { ContentCard, EmptyState } from "@/components/ui/page-header";
 import { SearchBar } from "@/components/ui/search-bar";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { applications, currentStudent, internships } from "@/data/mock";
@@ -61,8 +62,8 @@ export default function StudentInternshipsPage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Browse Internships"
+      <PortalPageHeader
+        title="Placements"
         description="Discover and apply to open internship opportunities"
       />
 
@@ -108,11 +109,11 @@ export default function StudentInternshipsPage() {
                   <div className="flex items-start justify-between gap-2">
                     <div>
                       <h3 className="font-semibold">{internship.title}</h3>
-                      <p className="text-sm text-default-500">{internship.companyName}</p>
+                      <p className="text-sm text-text-secondary">{internship.companyName}</p>
                     </div>
                     <StatusBadge status={internship.type} />
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 text-sm text-default-500">
+                  <div className="flex flex-wrap items-center gap-2 text-sm text-text-secondary">
                     <span className="inline-flex items-center gap-1">
                       <MapPin size={14} />
                       {internship.location}
@@ -126,7 +127,7 @@ export default function StudentInternshipsPage() {
                       </>
                     )}
                   </div>
-                  <p className="line-clamp-2 text-sm text-default-600">{internship.description}</p>
+                  <p className="line-clamp-2 text-sm text-text-primary">{internship.description}</p>
                   <div className="flex flex-wrap gap-1">
                     {internship.requirements.slice(0, 4).map((req) => (
                       <Chip key={req} size="sm" variant="flat">
@@ -135,7 +136,7 @@ export default function StudentInternshipsPage() {
                     ))}
                   </div>
                   <div className="flex items-center justify-between pt-2">
-                    <p className="text-xs text-default-400">
+                    <p className="text-xs text-text-secondary">
                       Deadline: {formatDate(internship.deadline)} · {internship.slots} slots ·{" "}
                       {internship.applied} applied
                     </p>
@@ -182,7 +183,7 @@ export default function StudentInternshipsPage() {
       >
         {selected && (
           <div className="space-y-4">
-            <p className="text-sm text-default-500">
+            <p className="text-sm text-text-secondary">
               {selected.companyName} · {selected.location}
             </p>
             <Textarea

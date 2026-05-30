@@ -31,20 +31,26 @@ export function Navbar({ userName, userEmail, onMenuClick, showMenuButton = fals
   return (
     <HeroNavbar
       maxWidth="full"
-      className="sticky top-0 z-30 border-b border-default-200 bg-content1/80 backdrop-blur-md"
+      className="sticky top-0 z-30 border-b border-border bg-surface/90 backdrop-blur-md"
       height="4rem"
     >
       <NavbarContent justify="start">
         {showMenuButton && (
           <NavbarItem>
-            <Button isIconOnly variant="light" onPress={onMenuClick} aria-label="Open menu">
+            <Button
+              isIconOnly
+              variant="light"
+              onPress={onMenuClick}
+              aria-label="Open menu"
+              className="text-text-secondary"
+            >
               <Menu size={20} />
             </Button>
           </NavbarItem>
         )}
       </NavbarContent>
 
-      <NavbarContent justify="end" className="gap-2">
+      <NavbarContent justify="end" className="gap-1">
         <NavbarItem>
           <ThemeToggle />
         </NavbarItem>
@@ -52,13 +58,16 @@ export function Navbar({ userName, userEmail, onMenuClick, showMenuButton = fals
         <NavbarItem>
           <Dropdown placement="bottom-end">
             <DropdownTrigger>
-              <Button isIconOnly variant="light" aria-label="Notifications">
+              <Button isIconOnly variant="light" aria-label="Notifications" className="text-text-secondary">
                 <Badge content={unreadCount} color="danger" size="sm" isInvisible={unreadCount === 0}>
                   <Bell size={20} />
                 </Badge>
               </Button>
             </DropdownTrigger>
-            <DropdownMenu aria-label="Notifications" className="w-80">
+            <DropdownMenu
+              aria-label="Notifications"
+              className="w-80 rounded-card border border-border bg-surface-card shadow-card"
+            >
               {notifications.map((n) => (
                 <DropdownItem key={n.id} description={n.message} className="py-2">
                   {n.title}
@@ -78,10 +87,10 @@ export function Navbar({ userName, userEmail, onMenuClick, showMenuButton = fals
                   classNames={{ base: "bg-primary/10 text-primary" }}
                   getInitials={getInitials}
                 />
-                <span className="hidden text-sm font-medium md:inline">{userName}</span>
+                <span className="hidden text-sm font-medium text-text-primary md:inline">{userName}</span>
               </Button>
             </DropdownTrigger>
-            <DropdownMenu aria-label="User menu">
+            <DropdownMenu aria-label="User menu" className="rounded-card border border-border bg-surface-card">
               <DropdownItem key="profile" startContent={<User size={16} />} description={userEmail}>
                 Profile
               </DropdownItem>

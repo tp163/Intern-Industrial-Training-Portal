@@ -12,7 +12,15 @@ export function ThemeToggle() {
   useEffect(() => setMounted(true), []);
 
   if (!mounted) {
-    return <Button isIconOnly variant="light" size="sm" aria-label="Toggle theme" />;
+    return (
+      <Button
+        isIconOnly
+        variant="light"
+        size="sm"
+        aria-label="Toggle theme"
+        className="text-text-secondary"
+      />
+    );
   }
 
   return (
@@ -21,6 +29,7 @@ export function ThemeToggle() {
       variant="light"
       size="sm"
       aria-label="Toggle theme"
+      className="text-text-secondary hover:text-text-primary"
       onPress={() => setTheme(theme === "dark" ? "light" : "dark")}
     >
       {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}

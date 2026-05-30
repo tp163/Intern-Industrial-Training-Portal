@@ -80,7 +80,7 @@ export default function SupervisorStudentsPage() {
                 <TableCell>{student.program}</TableCell>
                 <TableCell>Year {student.year}</TableCell>
                 <TableCell>{student.gpa ?? "—"}</TableCell>
-                <TableCell className="text-default-500">{student.email}</TableCell>
+                <TableCell className="text-text-secondary">{student.email}</TableCell>
               </TableRow>
             ))}
           </TableBody>

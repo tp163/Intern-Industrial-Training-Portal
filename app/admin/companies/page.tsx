@@ -94,7 +94,7 @@ export default function AdminCompaniesPage() {
                 <TableCell>
                   <div>
                     <p className="font-medium">{company.name}</p>
-                    <p className="text-xs text-default-500">{company.email}</p>
+                    <p className="text-xs text-text-secondary">{company.email}</p>
                   </div>
                 </TableCell>
                 <TableCell>{company.industry}</TableCell>
@@ -128,7 +128,7 @@ export default function AdminCompaniesPage() {
                       </Button>
                     </div>
                   ) : (
-                    <span className="text-sm text-default-400">—</span>
+                    <span className="text-sm text-text-secondary">—</span>
                   )}
                 </TableCell>
               </TableRow>

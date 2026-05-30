@@ -2,6 +2,7 @@
 
 import { AuthLayout } from "@/components/auth/auth-layout";
 import { roleDashboardPaths } from "@/lib/navigation";
+import { formFieldClassNames } from "@/lib/utils";
 import { Button, Input, Link, Select, SelectItem } from "@heroui/react";
 import { Eye, EyeOff } from "lucide-react";
 import NextLink from "next/link";
@@ -37,6 +38,7 @@ export default function LoginPage() {
           }}
           variant="bordered"
           radius="lg"
+          classNames={formFieldClassNames}
         >
           <SelectItem key="student">Student</SelectItem>
           <SelectItem key="supervisor">Supervisor</SelectItem>
@@ -52,6 +54,7 @@ export default function LoginPage() {
           variant="bordered"
           radius="lg"
           isRequired
+          classNames={formFieldClassNames}
         />
 
         <Input
@@ -63,11 +66,12 @@ export default function LoginPage() {
           variant="bordered"
           radius="lg"
           isRequired
+          classNames={formFieldClassNames}
           endContent={
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="text-default-400 hover:text-default-600"
+              className="text-text-secondary hover:text-text-primary"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -86,7 +90,7 @@ export default function LoginPage() {
             Sign In
           </Button>
 
-          <p className="text-center text-sm text-default-500">
+          <p className="text-center text-sm text-text-secondary">
             Don&apos;t have an account?{" "}
             <Link as={NextLink} href="/register" size="sm" color="primary">
               Register

@@ -1,6 +1,12 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
 
+export const formFieldClassNames = {
+  inputWrapper: "border-border bg-surface-card shadow-none rounded-input",
+  input: "text-text-primary placeholder:text-text-secondary",
+  label: "text-text-primary",
+};
+
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }

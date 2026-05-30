@@ -69,7 +69,7 @@ export default function AdminSupervisorsPage() {
                     <Avatar name={getInitials(supervisor.name)} size="sm" color="secondary" />
                     <div>
                       <p className="font-medium">{supervisor.name}</p>
-                      <p className="text-xs text-default-500">{supervisor.email}</p>
+                      <p className="text-xs text-text-secondary">{supervisor.email}</p>
                     </div>
                   </div>
                 </TableCell>

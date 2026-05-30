@@ -11,10 +11,10 @@ interface AuthLayoutProps {
 
 export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
   return (
-    <div className="flex min-h-screen">
-      <div className="relative hidden w-1/2 flex-col justify-between bg-gradient-to-br from-brand-600 via-brand-700 to-brand-900 p-12 text-white lg:flex">
+    <div className="flex min-h-screen bg-surface">
+      <div className="relative hidden w-1/2 flex-col justify-between bg-gradient-to-br from-brand-500 via-brand-600 to-brand-900 p-12 text-white lg:flex">
         <div className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-white/20 backdrop-blur">
+          <div className="flex h-11 w-11 items-center justify-center rounded-button bg-white/20 backdrop-blur">
             <GraduationCap size={24} />
           </div>
           <div>
@@ -45,13 +45,13 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
         <div className="flex flex-1 items-center justify-center px-6 pb-12">
           <div className="w-full max-w-md animate-slide-up">
             <div className="mb-8 flex items-center gap-3 lg:hidden">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-white">
+              <div className="flex h-10 w-10 items-center justify-center rounded-button bg-primary text-white shadow-card">
                 <GraduationCap size={20} />
               </div>
-              <span className="text-lg font-bold">IITS</span>
+              <span className="text-lg font-bold text-text-primary">IITS</span>
             </div>
-            <h2 className="text-2xl font-bold">{title}</h2>
-            <p className="mt-2 text-default-500">{subtitle}</p>
+            <h2 className="text-2xl font-bold text-text-primary">{title}</h2>
+            <p className="mt-2 text-text-secondary">{subtitle}</p>
             {children}
           </div>
         </div>

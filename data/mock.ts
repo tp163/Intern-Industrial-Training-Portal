@@ -13,8 +13,8 @@ import type {
 
 export const currentStudent: Student = {
   id: "stu-001",
-  name: "Sarah Johnson",
-  email: "sarah.johnson@university.edu",
+  name: "Alex Morgan",
+  email: "alex.morgan@university.edu",
   role: "student",
   studentId: "STU2024001",
   program: "Computer Science",
@@ -409,6 +409,53 @@ export const studentDashboardStats: DashboardStat[] = [
   { label: "Profile Completion", value: "85%", change: "+10% this week", trend: "up", icon: "User" },
 ];
 
+export const studentPortalDashboard = {
+  activeCompany: "TechCorp",
+  internshipProgress: {
+    percent: 50,
+    monthsCompleted: 3,
+    monthsRemaining: 3,
+  },
+  nextReport: {
+    date: "Oct 12",
+    type: "Reflective Journal",
+  },
+  activities: [
+    {
+      id: "act-001",
+      title: "Monthly Report",
+      description: "Submitted for April. Waiting for review.",
+      time: "2 HOURS AGO",
+      icon: "CheckCircle" as const,
+      iconBg: "bg-[#E8F0EA]",
+      iconColor: "text-[#5A7A62]",
+    },
+    {
+      id: "act-002",
+      title: "New Feedback",
+      description: "Supervisor left feedback on March Report.",
+      time: "YESTERDAY",
+      icon: "MessageSquare" as const,
+      iconBg: "bg-[#F4EDE6]",
+      iconColor: "text-primary",
+    },
+    {
+      id: "act-003",
+      title: "Upcoming Deadline",
+      description: "Skill assessment closes in 24 hours.",
+      time: "1 DAY AGO",
+      icon: "AlertCircle" as const,
+      iconBg: "bg-[#FCEAEA]",
+      iconColor: "text-danger",
+    },
+  ],
+  newOpportunities: 8,
+  workshop: {
+    title: "Resume Workshop",
+    description: "Join industry experts next Monday at 10:00 AM to polish your portfolio.",
+  },
+};
+
 export const supervisorDashboardStats: DashboardStat[] = [
   { label: "Assigned Students", value: 12, change: "+2 this semester", trend: "up", icon: "Users" },
   { label: "Pending Reviews", value: 5, change: "2 overdue", trend: "down", icon: "FileCheck" },
@@ -478,10 +525,10 @@ export const analyticsData = {
     { month: "May", count: 91 },
   ],
   statusDistribution: [
-    { status: "Approved", count: 45, color: "#22c55e" },
-    { status: "Pending", count: 32, color: "#f59e0b" },
-    { status: "Reviewing", count: 28, color: "#3366ff" },
-    { status: "Rejected", count: 15, color: "#ef4444" },
+    { status: "Approved", count: 45, color: "#4CAF50" },
+    { status: "Pending", count: 32, color: "#FF9800" },
+    { status: "Reviewing", count: 28, color: "#B35A1F" },
+    { status: "Rejected", count: 15, color: "#EF4444" },
   ],
   topCompanies: [
     { name: "TechNova Solutions", applications: 45 },

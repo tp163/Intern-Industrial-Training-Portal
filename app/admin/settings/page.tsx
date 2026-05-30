@@ -40,11 +40,11 @@ export default function AdminSettingsPage() {
             {settings.map((setting) => (
               <div
                 key={setting.id}
-                className="flex flex-col gap-3 border-b border-default-100 pb-6 last:border-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 border-b border-border pb-6 last:border-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="max-w-md">
                   <p className="font-medium">{setting.label}</p>
-                  <p className="text-sm text-default-500">{setting.description}</p>
+                  <p className="text-sm text-text-secondary">{setting.description}</p>
                 </div>
 
                 <div className="w-full sm:w-64">
@@ -92,7 +92,7 @@ export default function AdminSettingsPage() {
             ))}
           </div>
 
-          <div className="mt-8 flex justify-end border-t border-default-100 pt-6">
+          <div className="mt-8 flex justify-end border-t border-border pt-6">
             <Button
               type="submit"
               color="primary"

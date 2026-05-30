@@ -1,8 +1,9 @@
 "use client";
 
-import { ContentCard, PageHeader } from "@/components/ui/page-header";
+import { PortalPageHeader } from "@/components/student/portal-page-header";
+import { ContentCard } from "@/components/ui/page-header";
 import { currentStudent } from "@/data/mock";
-import { getInitials } from "@/lib/utils";
+import { formFieldClassNames, getInitials } from "@/lib/utils";
 import {
   Avatar,
   Button,
@@ -40,7 +41,7 @@ export default function StudentProfilePage() {
 
   return (
     <div className="space-y-6">
-      <PageHeader
+      <PortalPageHeader
         title="My Profile"
         description="Update your personal and academic information"
       />
@@ -54,8 +55,8 @@ export default function StudentProfilePage() {
             color="primary"
           />
           <div>
-            <p className="text-lg font-semibold">{form.name}</p>
-            <p className="text-sm text-default-500">{form.studentId}</p>
+            <p className="text-lg font-semibold text-text-primary">{form.name}</p>
+            <p className="text-sm text-text-secondary">{form.studentId}</p>
           </div>
         </div>
 
@@ -67,7 +68,8 @@ export default function StudentProfilePage() {
               onValueChange={(v) => update("name", v)}
               variant="bordered"
               radius="lg"
-              startContent={<User className="text-default-400" size={18} />}
+              classNames={formFieldClassNames}
+              startContent={<User className="text-text-secondary" size={18} />}
               isRequired
             />
             <Input
@@ -77,6 +79,7 @@ export default function StudentProfilePage() {
               onValueChange={(v) => update("email", v)}
               variant="bordered"
               radius="lg"
+              classNames={formFieldClassNames}
               isRequired
             />
             <Input
@@ -85,6 +88,7 @@ export default function StudentProfilePage() {
               onValueChange={(v) => update("phone", v)}
               variant="bordered"
               radius="lg"
+              classNames={formFieldClassNames}
             />
             <Input
               label="Student ID"
@@ -92,7 +96,7 @@ export default function StudentProfilePage() {
               isReadOnly
               variant="bordered"
               radius="lg"
-              classNames={{ input: "text-default-500" }}
+              classNames={{ ...formFieldClassNames, input: "text-text-secondary" }}
             />
             <Select
               label="Program"
@@ -103,6 +107,7 @@ export default function StudentProfilePage() {
               }}
               variant="bordered"
               radius="lg"
+              classNames={formFieldClassNames}
             >
               {programs.map((p) => (
                 <SelectItem key={p}>{p}</SelectItem>
@@ -117,6 +122,7 @@ export default function StudentProfilePage() {
               }}
               variant="bordered"
               radius="lg"
+              classNames={formFieldClassNames}
             >
               {[1, 2, 3, 4].map((y) => (
                 <SelectItem key={String(y)}>Year {y}</SelectItem>
@@ -128,6 +134,7 @@ export default function StudentProfilePage() {
               onValueChange={(v) => update("gpa", v)}
               variant="bordered"
               radius="lg"
+              classNames={formFieldClassNames}
               placeholder="e.g. 3.75"
             />
             <Input
@@ -136,6 +143,7 @@ export default function StudentProfilePage() {
               onValueChange={(v) => update("department", v)}
               variant="bordered"
               radius="lg"
+              classNames={formFieldClassNames}
             />
           </div>
 
