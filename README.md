@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Intern & Industrial Training System (Frontend)
 
 A frontend-only Next.js 15 application for managing internships, applications, and industrial training progress.
@@ -73,3 +74,7 @@ public/        # Static assets
 ## Windows Path Note
 
 If your project folder contains `&` in the name, npm scripts use direct `node` paths to avoid Windows shell issues.
+=======
+# Intern-Industrial-Training-Portal
+The Intern and Industrial Training System is a web-based platform that connects university students with companies offering internships and training opportunities. Students can create profiles, upload CVs, and apply for vacancies, while companies can post opportunities, search candidates, and manage recruitment through a centralized system.
+>>>>>>> dfd6de926376bf1fdb6ffc82b0d673cc361b0829
