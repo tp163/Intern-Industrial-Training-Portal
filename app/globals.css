@@ -1,0 +1,70 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-surface text-text-primary antialiased;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+}
+
+@layer components {
+  .ds-card {
+    @apply rounded-card border border-border/60 bg-white shadow-card;
+  }
+
+  .ds-card-hover {
+    @apply transition-shadow hover:shadow-card-hover;
+  }
+
+  .ds-list-item {
+    @apply rounded-button border border-border bg-surface-card p-4 transition-colors hover:bg-surface-sidebar/60;
+  }
+
+  .ds-icon-badge {
+    @apply flex items-center justify-center rounded-button bg-primary/10 text-primary;
+  }
+
+  .ds-page-title {
+    @apply text-2xl font-bold tracking-tight text-text-primary;
+  }
+
+  .ds-page-description {
+    @apply mt-1 text-sm text-text-secondary;
+  }
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+
+  .animate-slide-up {
+    animation: slideUp 0.4s ease-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
