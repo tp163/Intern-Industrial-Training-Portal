@@ -4,7 +4,7 @@ import { AppHeader } from "@/components/layout/app-header";
 import { Navbar } from "@/components/layout/navbar";
 import { Sidebar } from "@/components/layout/sidebar";
 import { cn } from "@/lib/utils";
-import type { NavItem } from "@/types";
+import type { NavItem, NotificationAudience } from "@/types";
 import { useCallback, useState } from "react";
 
 interface DashboardLayoutProps {
@@ -19,6 +19,8 @@ interface DashboardLayoutProps {
   consoleTitle?: string;
   consoleVersion?: string;
   modeBadge?: string;
+  notificationAudience?: NotificationAudience;
+  notificationUserId?: string;
 }
 
 export function DashboardLayout({
@@ -33,6 +35,8 @@ export function DashboardLayout({
   consoleTitle,
   consoleVersion,
   modeBadge,
+  notificationAudience,
+  notificationUserId,
 }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -108,6 +112,8 @@ export function DashboardLayout({
             sidebarCollapsed={collapsed}
             mobileMenuOpen={mobileOpen}
             onSidebarToggle={handleSidebarToggle}
+            notificationAudience={notificationAudience}
+            notificationUserId={notificationUserId}
           />
         ) : (
           <Navbar

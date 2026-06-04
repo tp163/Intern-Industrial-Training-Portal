@@ -14,6 +14,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       userRoleBadge="Faculty Admin"
       consoleTitle={adminConsoleMeta.consoleTitle}
       consoleVersion={adminConsoleMeta.consoleVersion}
+      notificationAudience="admin"
+      notificationUserId={currentAdmin.id}
     >
       {children}
     </DashboardLayout>

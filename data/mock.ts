@@ -599,27 +599,36 @@ export const progressReports: ProgressReport[] = [
 export const notifications: Notification[] = [
   {
     id: "not-001",
+    audience: "student",
+    userId: "stu-001",
     title: "Application Update",
     message: "Your application for Software Engineering Intern is under review.",
     read: false,
     createdAt: "2025-04-22T10:30:00",
     type: "info",
+    category: "internship",
   },
   {
     id: "not-002",
+    audience: "student",
+    userId: "stu-001",
     title: "New Internship Posted",
     message: "DataFlow Analytics posted a new Data Science Intern position.",
     read: false,
     createdAt: "2025-04-21T14:00:00",
     type: "success",
+    category: "internship",
   },
   {
     id: "not-003",
+    audience: "supervisor",
+    userId: "sup-001",
     title: "Review Required",
     message: "Sarah Johnson submitted a Week 4 progress review.",
     read: true,
     createdAt: "2025-04-20T09:15:00",
     type: "warning",
+    category: "report_submitted",
   },
 ];
 

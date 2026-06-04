@@ -13,6 +13,30 @@ export type InternshipPlacementStatus = "active" | "pending" | "not_placed";
 
 export type DepartmentCategory = "CMIS" | "IMGT" | "Management" | "Electronic";
 
+/** Logbook report lifecycle */
+export type LogbookReportStatus =
+  | "pending"
+  | "unreviewed"
+  | "reviewed"
+  | "accepted"
+  | "rejected";
+
+export type NotificationAudience = "student" | "admin" | "supervisor";
+
+export type NotificationCategory =
+  | "report_submitted"
+  | "report_reviewed"
+  | "report_accepted"
+  | "report_rejected"
+  | "report_feedback"
+  | "deadline"
+  | "internship"
+  | "profile"
+  | "announcement"
+  | "allocation"
+  | "company"
+  | "general";
+
 export interface User {
   id: string;
   name: string;
@@ -24,6 +48,8 @@ export interface User {
   createdAt: string;
 }
 
+export type AllocationStatus = "allocated" | "unassigned" | "pending";
+
 export interface Student extends User {
   role: "student";
   studentId: string;
@@ -31,10 +57,14 @@ export interface Student extends User {
   year: number;
   gpa?: number;
   cvUrl?: string;
+  cvFileName?: string;
   supervisorId?: string;
+  allocationStatus?: AllocationStatus;
   departmentCode?: string;
   batch?: string;
   internshipStatus?: InternshipPlacementStatus;
+  internshipCompany?: string;
+  internshipRole?: string;
 }
 
 export interface Supervisor extends User {
@@ -107,18 +137,31 @@ export interface Review {
   score?: number;
 }
 
-export type MonthlyReportStatus = "pending" | "reviewed";
-
-export interface MonthlyReport {
+export interface LogbookReport {
   id: string;
   studentId: string;
+  studentName: string;
+  supervisorId: string;
   monthNumber: number;
   period: string;
-  status: MonthlyReportStatus;
+  monthKey: string;
+  submittedAt: string;
+  status: LogbookReportStatus;
   excerpt: string;
+  pdfUrl?: string;
+  pdfFileName?: string;
   feedback?: string;
-  rating?: number;
+  marks?: number;
+  reviewedAt?: string;
   isCurrent?: boolean;
+}
+
+/** @deprecated Use LogbookReport */
+export type MonthlyReportStatus = LogbookReportStatus;
+
+/** @deprecated Use LogbookReport */
+export interface MonthlyReport extends Omit<LogbookReport, "studentName" | "supervisorId" | "monthKey" | "submittedAt"> {
+  rating?: number;
 }
 
 export interface ProgressReport {
@@ -148,13 +191,42 @@ export interface NavItem {
   icon: string;
 }
 
-export interface Notification {
+export interface AppNotification {
   id: string;
+  audience: NotificationAudience;
+  userId?: string;
   title: string;
   message: string;
   read: boolean;
   createdAt: string;
   type: "info" | "success" | "warning" | "error";
+  category: NotificationCategory;
+}
+
+/** @deprecated Use AppNotification */
+export type Notification = AppNotification;
+
+export type AnnouncementPriority = "normal" | "important" | "urgent";
+export type AnnouncementTarget = "all_students" | "supervisor_students";
+export type AnnouncementAuthorRole = "admin" | "supervisor";
+export type AnnouncementCategory = "workshop" | "general" | "internship" | "deadline" | "reminder";
+
+export interface Announcement {
+  id: string;
+  title: string;
+  message: string;
+  authorId: string;
+  authorName: string;
+  authorRole: AnnouncementAuthorRole;
+  priority: AnnouncementPriority;
+  target: AnnouncementTarget;
+  supervisorId?: string;
+  linkUrl?: string;
+  attachmentName?: string;
+  scheduledAt?: string;
+  publishedAt?: string;
+  createdAt: string;
+  category: AnnouncementCategory;
 }
 
 export interface SystemSetting {

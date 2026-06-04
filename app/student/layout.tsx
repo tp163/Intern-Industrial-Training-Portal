@@ -19,6 +19,8 @@ export default function StudentLayout({ children }: { children: React.ReactNode 
       variant="portal"
       userRoleBadge="Student Intern"
       modeBadge={modeBadge}
+      notificationAudience="student"
+      notificationUserId={currentStudent.id}
     >
       {children}
     </DashboardLayout>

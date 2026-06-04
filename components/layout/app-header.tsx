@@ -9,6 +9,8 @@ import {
   DropdownTrigger,
 } from "@heroui/react";
 import { cn, getInitials } from "@/lib/utils";
+import { NotificationPanel } from "@/components/notifications/notification-panel";
+import type { NotificationAudience } from "@/types";
 import { ChevronDown, GraduationCap, LogOut, Menu, PanelLeft, PanelLeftClose, User, X } from "lucide-react";
 import Link from "next/link";
 
@@ -22,6 +24,8 @@ interface AppHeaderProps {
   sidebarCollapsed?: boolean;
   mobileMenuOpen?: boolean;
   modeBadge?: string;
+  notificationAudience?: NotificationAudience;
+  notificationUserId?: string;
 }
 
 export function AppHeader({
@@ -34,6 +38,8 @@ export function AppHeader({
   sidebarCollapsed = false,
   mobileMenuOpen = false,
   modeBadge,
+  notificationAudience,
+  notificationUserId,
 }: AppHeaderProps) {
   const ToggleIcon = mobileMenuOpen ? X : Menu;
   return (
@@ -70,6 +76,10 @@ export function AppHeader({
             <span className="hidden rounded-full border border-border bg-surface-muted px-3 py-1 text-xs font-medium text-text-secondary sm:inline">
               {modeBadge}
             </span>
+          )}
+
+          {notificationAudience && (
+            <NotificationPanel audience={notificationAudience} userId={notificationUserId} />
           )}
 
           <Dropdown placement="bottom-end">

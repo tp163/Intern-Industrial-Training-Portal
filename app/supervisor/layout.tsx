@@ -14,6 +14,8 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
       userRoleBadge="Faculty Supervisor"
       consoleTitle={supervisorConsoleMeta.consoleTitle}
       consoleVersion={supervisorConsoleMeta.consoleVersion}
+      notificationAudience="supervisor"
+      notificationUserId={currentSupervisor.id}
     >
       {children}
     </DashboardLayout>

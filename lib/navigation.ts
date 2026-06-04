@@ -8,11 +8,12 @@ export const studentTopNavItems: NavItem[] = [
 ];
 
 export const studentNavItems: NavItem[] = [
-  { label: "Dashboard", href: "/student/dashboard", icon: "LayoutDashboard" },
-  { label: "Placements", href: "/student/internships", icon: "Briefcase" },
-  { label: "Logbook", href: "/student/reports", icon: "BookOpen" },
-  { label: "Company Directory", href: "/student/companies", icon: "Building2" },
-  { label: "CV Management", href: "/student/cv", icon: "FileText" },
+  { id: "dashboard", label: "Dashboard", href: "/student/dashboard", icon: "LayoutDashboard" },
+  { id: "announcements", label: "Announcements", href: "/student/announcements", icon: "Megaphone" },
+  { id: "placements", label: "Placements", href: "/student/internships", icon: "Briefcase" },
+  { id: "logbook", label: "Logbook", href: "/student/reports", icon: "BookOpen" },
+  { id: "companies", label: "Company Directory", href: "/student/companies", icon: "Building2" },
+  { id: "cv", label: "CV Management", href: "/student/cv", icon: "FileText" },
 ];
 
 export const supervisorTopNavItems: NavItem[] = [
@@ -26,6 +27,8 @@ export const supervisorNavItems: NavItem[] = [
   { id: "dashboard", label: "Dashboard", href: "/supervisor/dashboard", icon: "LayoutDashboard" },
   { id: "students", label: "Students", href: "/supervisor/students", icon: "GraduationCap" },
   { id: "reports", label: "Reports", href: "/supervisor/reviews", icon: "FileText" },
+  { id: "broadcast", label: "Broadcast", href: "/supervisor/broadcast", icon: "Megaphone" },
+  { id: "companies", label: "Company Directory", href: "/supervisor/companies", icon: "Building2" },
 ];
 
 export const adminTopNavItems: NavItem[] = [
@@ -37,12 +40,19 @@ export const adminTopNavItems: NavItem[] = [
 export const adminNavItems: NavItem[] = [
   { id: "dashboard", label: "Dashboard", href: "/admin/dashboard", icon: "LayoutDashboard" },
   {
+    id: "student-allocation",
+    label: "Student Allocation",
+    href: "/admin/student-allocation",
+    icon: "UserCheck",
+  },
+  {
     id: "supervisor-student-directory",
     label: "Supervisor Student Directory",
     href: "/admin/supervisor-student-directory",
     icon: "FolderTree",
   },
-  { id: "supervisors", label: "Supervisors", href: "/admin/supervisors", icon: "UserCheck" },
+  { id: "broadcast", label: "Broadcast", href: "/admin/broadcast", icon: "Megaphone" },
+  { id: "supervisors", label: "Supervisors", href: "/admin/supervisors", icon: "Users" },
   { id: "companies", label: "Company Directory", href: "/admin/companies", icon: "Building2" },
   { id: "internships", label: "Internships", href: "/admin/internships", icon: "Briefcase" },
   { id: "reports", label: "Reports", href: "/admin/reports", icon: "BarChart3" },

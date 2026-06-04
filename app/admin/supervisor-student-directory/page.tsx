@@ -3,7 +3,8 @@
 import { AppModal } from "@/components/ui/app-modal";
 import { TableScroll } from "@/components/ui/table-scroll";
 import { InternshipStatusPill } from "@/components/supervisor/internship-status-pill";
-import { currentAdmin, students as allStudents, supervisors } from "@/data/mock";
+import { currentAdmin, supervisors } from "@/data/mock";
+import { useAppStore } from "@/lib/store/app-store";
 import { fetchStudentByStudentId } from "@/lib/mock-api";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { formFieldClassNames, getInitials } from "@/lib/utils";
@@ -28,7 +29,7 @@ import { useMemo, useState } from "react";
 const ALL = "all";
 
 export default function AdminSupervisorStudentDirectoryPage() {
-  const [students, setStudents] = useState(allStudents);
+  const { students, allocateStudents, updateStudentRecord, addStudent } = useAppStore();
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState(ALL);
   const [batch, setBatch] = useState(ALL);
@@ -163,29 +164,30 @@ export default function AdminSupervisorStudentDirectoryPage() {
       notifyError("Fetch student details before adding to the directory.");
       return;
     }
-    setSaving(true);
-    setTimeout(() => {
-      const entry: Student = {
-        ...(addForm as Student),
-        id: addForm.id?.startsWith("reg-") ? `stu-${Date.now()}` : (addForm.id ?? `stu-${Date.now()}`),
-        role: "student",
-      };
-      setStudents((prev) => [...prev, entry]);
-      setSaving(false);
-      notifySuccess(`${entry.name} added to directory.`);
-      resetAddStudent();
-    }, 600);
+    const entry: Student = {
+      ...(addForm as Student),
+      id: addForm.id?.startsWith("reg-") ? `stu-${Date.now()}` : (addForm.id ?? `stu-${Date.now()}`),
+      role: "student",
+      allocationStatus: "unassigned",
+    };
+    addStudent(entry);
+    notifySuccess(`${entry.name} added. Assign a supervisor via Student Allocation.`);
+    resetAddStudent();
   };
 
   const handleSaveEdit = () => {
     if (!selectedStudent) return;
     setSaving(true);
     setTimeout(() => {
-      setStudents((prev) =>
-        prev.map((s) =>
-          s.id === selectedStudent.id ? ({ ...s, ...editForm } as Student) : s
-        )
-      );
+      const prevSupervisor = selectedStudent.supervisorId;
+      const nextSupervisor = editForm.supervisorId;
+      updateStudentRecord(selectedStudent.id, editForm as Partial<Student>, "directory record");
+      if (prevSupervisor !== nextSupervisor) {
+        allocateStudents(
+          [selectedStudent.id],
+          nextSupervisor ?? null
+        );
+      }
       setSaving(false);
       notifySuccess("Student updated successfully.");
       closeModal();

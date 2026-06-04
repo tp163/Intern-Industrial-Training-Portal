@@ -1,14 +1,16 @@
 "use client";
 
 import { AppModal } from "@/components/ui/app-modal";
+import { PdfViewer } from "@/components/reports/pdf-viewer";
+import { ReportStatusBadge } from "@/components/reports/report-status-badge";
 import { ContentCard, PageHeader } from "@/components/ui/page-header";
 import { TableScroll } from "@/components/ui/table-scroll";
 import { SearchBar } from "@/components/ui/search-bar";
-import { StatusBadge } from "@/components/ui/status-badge";
-import { currentSupervisor, reviews, students } from "@/data/mock";
-import { capitalize, formatDate } from "@/lib/utils";
+import { currentSupervisor } from "@/data/mock";
+import { useAppStore } from "@/lib/store/app-store";
 import { notifyError, notifySuccess } from "@/lib/notify";
-import type { Review, ReviewStatus } from "@/types";
+import { formatDate } from "@/lib/utils";
+import type { LogbookReport } from "@/types";
 import {
   Button,
   Input,
@@ -22,305 +24,276 @@ import {
   TableRow,
   Textarea,
 } from "@heroui/react";
-import { Check, FilePlus, X } from "lucide-react";
+import { Check, Eye, X } from "lucide-react";
 import { useMemo, useState } from "react";
 
 const statusOptions = [
   { key: "all", label: "All Statuses" },
   { key: "pending", label: "Pending" },
-  { key: "approved", label: "Approved" },
+  { key: "unreviewed", label: "Unreviewed" },
+  { key: "accepted", label: "Accepted" },
   { key: "rejected", label: "Rejected" },
 ];
 
 export default function SupervisorReviewsPage() {
+  const { getReportsForSupervisor, reviewLogbookReport } = useAppStore();
+  const allReports = getReportsForSupervisor(currentSupervisor.id);
+
   const [search, setSearch] = useState("");
   const [studentIdFilter, setStudentIdFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
-  const [items, setItems] = useState(
-    () => reviews.filter((r) => r.supervisorId === currentSupervisor.id)
-  );
-  const [selected, setSelected] = useState<Review | null>(null);
-  const [action, setAction] = useState<"approve" | "reject" | "evaluate" | null>(null);
+  const [selected, setSelected] = useState<LogbookReport | null>(null);
+  const [reviewMode, setReviewMode] = useState<"view" | "accept" | "reject">("view");
   const [feedback, setFeedback] = useState("");
-  const [score, setScore] = useState("");
+  const [marks, setMarks] = useState("");
   const [submitting, setSubmitting] = useState(false);
-  const [showAddReport, setShowAddReport] = useState(false);
-  const [newReport, setNewReport] = useState({
-    studentRecordId: "",
-    title: "",
-    marks: "",
-    evaluation: "",
-  });
-
-  const assignedStudents = students.filter((s) => s.supervisorId === currentSupervisor.id);
 
   const filtered = useMemo(() => {
-    return items.filter((r) => {
-      const student = assignedStudents.find((s) => s.id === r.studentId);
+    return allReports.filter((r) => {
       const matchesSearch =
         !search ||
-        r.title.toLowerCase().includes(search.toLowerCase()) ||
-        r.studentName.toLowerCase().includes(search.toLowerCase());
+        r.studentName.toLowerCase().includes(search.toLowerCase()) ||
+        r.period.toLowerCase().includes(search.toLowerCase()) ||
+        r.excerpt.toLowerCase().includes(search.toLowerCase());
       const matchesStudentId =
         !studentIdFilter ||
-        student?.studentId.toLowerCase().includes(studentIdFilter.toLowerCase()) ||
         r.studentName.toLowerCase().includes(studentIdFilter.toLowerCase());
       const submitted = new Date(r.submittedAt);
       const matchesFrom = !dateFrom || submitted >= new Date(dateFrom);
-      const matchesTo = !dateTo || submitted <= new Date(dateTo);
+      const matchesTo = !dateTo || submitted <= new Date(dateTo + "T23:59:59");
       const matchesStatus = statusFilter === "all" || r.status === statusFilter;
       return matchesSearch && matchesStudentId && matchesFrom && matchesTo && matchesStatus;
     });
-  }, [items, search, studentIdFilter, dateFrom, dateTo, statusFilter, assignedStudents]);
+  }, [allReports, search, studentIdFilter, dateFrom, dateTo, statusFilter]);
 
-  const openModal = (review: Review, act: "approve" | "reject" | "evaluate") => {
-    setSelected(review);
-    setAction(act);
-    setFeedback(review.feedback ?? "");
-    setScore(review.score?.toString() ?? "");
+  const openReview = (report: LogbookReport, mode: "view" | "accept" | "reject") => {
+    setSelected(report);
+    setReviewMode(mode);
+    setFeedback(report.feedback ?? "");
+    setMarks(report.marks?.toString() ?? "");
   };
 
-  const handleSubmit = () => {
-    if (!selected || !action || action === "evaluate") return;
+  const closeModal = () => {
+    setSelected(null);
+    setReviewMode("view");
+    setFeedback("");
+    setMarks("");
+  };
+
+  const handleSaveReview = (status: "accepted" | "rejected") => {
+    if (!selected) return;
+    const marksNum = Number(marks);
+    if (Number.isNaN(marksNum) || marksNum < 0 || marksNum > 100) {
+      notifyError("Please enter valid marks between 0 and 100.");
+      return;
+    }
+    if (!feedback.trim()) {
+      notifyError("Please provide review comments or feedback.");
+      return;
+    }
     setSubmitting(true);
     setTimeout(() => {
-      const newStatus: ReviewStatus = action === "approve" ? "approved" : "rejected";
-      setItems((prev) =>
-        prev.map((r) =>
-          r.id === selected.id
-            ? { ...r, status: newStatus, feedback, score: score ? Number(score) : r.score }
-            : r
-        )
-      );
+      reviewLogbookReport({
+        reportId: selected.id,
+        status,
+        marks: marksNum,
+        feedback: feedback.trim(),
+      });
       setSubmitting(false);
-      setSelected(null);
-      setAction(null);
-      notifySuccess(`Report ${newStatus}.`);
+      notifySuccess(`Report ${status === "accepted" ? "accepted" : "rejected"} successfully.`);
+      closeModal();
     }, 600);
-  };
-
-  const handleAddReport = () => {
-    if (!newReport.studentRecordId) {
-      notifyError("Please select a student.");
-      return;
-    }
-    if (!newReport.title.trim()) {
-      notifyError("Please enter a report title.");
-      return;
-    }
-    const student = assignedStudents.find((s) => s.id === newReport.studentRecordId);
-    if (!student) {
-      notifyError("Selected student not found.");
-      return;
-    }
-    setSubmitting(true);
-    setTimeout(() => {
-      const entry: Review = {
-        id: `rev-${Date.now()}`,
-        studentId: student.id,
-        studentName: student.name,
-        supervisorId: currentSupervisor.id,
-        title: newReport.title || "Supervisor Evaluation",
-        type: "weekly",
-        submittedAt: new Date().toISOString().slice(0, 10),
-        status: "approved",
-        content: newReport.evaluation,
-        feedback: newReport.evaluation,
-        score: Number(newReport.marks) || undefined,
-      };
-      setItems((prev) => [entry, ...prev]);
-      setSubmitting(false);
-      setShowAddReport(false);
-      setNewReport({ studentRecordId: "", title: "", marks: "", evaluation: "" });
-      notifySuccess("Evaluation report submitted.");
-    }, 700);
   };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Reports"
-        description="Add marks, submit evaluations, and review student monthly reports"
-        action={
-          <Button
-            color="primary"
-            radius="lg"
-            startContent={<FilePlus size={16} />}
-            onPress={() => setShowAddReport(true)}
-          >
-            Add Evaluation
-          </Button>
-        }
+        description="Review student logbook PDF submissions, assign marks, and set acceptance status"
       />
 
       <ContentCard>
-        <div className="mb-6 grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-4">
+        <div className="mb-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Search by title or student..."
-            className="lg:col-span-2"
+            placeholder="Search student or period..."
+            className="md:col-span-2"
           />
           <Input
-            label="Student ID"
-            placeholder="Filter by ID"
+            label="Student ID / Name"
+            placeholder="Filter"
             value={studentIdFilter}
             onValueChange={setStudentIdFilter}
             variant="bordered"
             radius="lg"
           />
-          <Input
-            type="date"
-            label="From"
-            value={dateFrom}
-            onValueChange={setDateFrom}
-            variant="bordered"
-            radius="lg"
-          />
-          <Input
-            type="date"
-            label="To"
-            value={dateTo}
-            onValueChange={setDateTo}
-            variant="bordered"
-            radius="lg"
-          />
           <Select
-            className="xl:col-span-2"
+            label="Status"
             selectedKeys={[statusFilter]}
-            onSelectionChange={(keys) => {
-              const val = Array.from(keys)[0] as string;
-              if (val) setStatusFilter(val);
-            }}
+            onSelectionChange={(keys) => setStatusFilter((Array.from(keys)[0] as string) ?? "all")}
             variant="bordered"
             radius="lg"
-            aria-label="Status"
           >
             {statusOptions.map((opt) => (
               <SelectItem key={opt.key}>{opt.label}</SelectItem>
             ))}
           </Select>
+          <Input type="date" label="From" value={dateFrom} onValueChange={setDateFrom} variant="bordered" radius="lg" />
+          <Input type="date" label="To" value={dateTo} onValueChange={setDateTo} variant="bordered" radius="lg" />
         </div>
 
         <TableScroll>
-        <Table aria-label="Reports table" removeWrapper>
-          <TableHeader>
-            <TableColumn>TITLE</TableColumn>
-            <TableColumn>STUDENT</TableColumn>
-            <TableColumn>MARKS</TableColumn>
-            <TableColumn>SUBMITTED</TableColumn>
-            <TableColumn>STATUS</TableColumn>
-            <TableColumn>ACTIONS</TableColumn>
-          </TableHeader>
-          <TableBody emptyContent="No reports match your filters.">
-            {filtered.map((review) => (
-              <TableRow key={review.id}>
-                <TableCell>
-                  <span className="font-medium">{review.title}</span>
-                </TableCell>
-                <TableCell>{review.studentName}</TableCell>
-                <TableCell>{review.score != null ? `${review.score}%` : "—"}</TableCell>
-                <TableCell>{formatDate(review.submittedAt)}</TableCell>
-                <TableCell>
-                  <StatusBadge status={review.status} />
-                </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap gap-1">
-                    {review.status === "pending" ? (
-                      <>
-                        <Button size="sm" color="success" variant="flat" radius="lg" startContent={<Check size={14} />} onPress={() => openModal(review, "approve")}>
-                          Approve
-                        </Button>
-                        <Button size="sm" color="danger" variant="flat" radius="lg" startContent={<X size={14} />} onPress={() => openModal(review, "reject")}>
-                          Reject
-                        </Button>
-                      </>
+          <Table aria-label="Student logbook reports" removeWrapper>
+            <TableHeader>
+              <TableColumn>STUDENT</TableColumn>
+              <TableColumn>PERIOD</TableColumn>
+              <TableColumn className="hidden sm:table-cell">PDF</TableColumn>
+              <TableColumn>MARKS</TableColumn>
+              <TableColumn>SUBMITTED</TableColumn>
+              <TableColumn>STATUS</TableColumn>
+              <TableColumn>ACTIONS</TableColumn>
+            </TableHeader>
+            <TableBody emptyContent="No reports match your filters.">
+              {filtered.map((report) => (
+                <TableRow key={report.id}>
+                  <TableCell>
+                    <p className="font-medium">{report.studentName}</p>
+                  </TableCell>
+                  <TableCell>{report.period}</TableCell>
+                  <TableCell className="hidden sm:table-cell">
+                    {report.pdfFileName ?? "—"}
+                  </TableCell>
+                  <TableCell>
+                    {report.marks != null ? (
+                      <span className="font-semibold text-primary">{report.marks}</span>
                     ) : (
-                      <Button size="sm" variant="light" onPress={() => openModal(review, "evaluate")}>
-                        View
-                      </Button>
+                      "—"
                     )}
-                  </div>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+                  </TableCell>
+                  <TableCell>{formatDate(report.submittedAt)}</TableCell>
+                  <TableCell>
+                    <ReportStatusBadge status={report.status} />
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-wrap gap-1">
+                      <Button
+                        size="sm"
+                        variant="light"
+                        startContent={<Eye size={14} />}
+                        onPress={() => openReview(report, "view")}
+                      >
+                        Review
+                      </Button>
+                      {report.status === "pending" && (
+                        <>
+                          <Button
+                            size="sm"
+                            color="success"
+                            variant="flat"
+                            startContent={<Check size={14} />}
+                            onPress={() => openReview(report, "accept")}
+                          >
+                            Accept
+                          </Button>
+                          <Button
+                            size="sm"
+                            color="danger"
+                            variant="flat"
+                            startContent={<X size={14} />}
+                            onPress={() => openReview(report, "reject")}
+                          >
+                            Reject
+                          </Button>
+                        </>
+                      )}
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
         </TableScroll>
       </ContentCard>
 
       <AppModal
-        isOpen={showAddReport}
-        onClose={() => setShowAddReport(false)}
-        title="Add Evaluation Report"
-        footer={
-          <>
-            <Button variant="light" onPress={() => setShowAddReport(false)}>Cancel</Button>
-            <Button
-              color="primary"
-              isLoading={submitting}
-              isDisabled={!newReport.studentRecordId || !newReport.title.trim()}
-              onPress={handleAddReport}
-            >
-              Submit Report
-            </Button>
-          </>
+        isOpen={!!selected}
+        onClose={closeModal}
+        title={
+          reviewMode === "accept"
+            ? "Accept Report"
+            : reviewMode === "reject"
+              ? "Reject Report"
+              : `Review — ${selected?.studentName ?? ""}`
         }
-      >
-        <div className="space-y-4">
-          <Select
-            label="Student"
-            placeholder="Select assigned student"
-            selectedKeys={newReport.studentRecordId ? [newReport.studentRecordId] : []}
-            onSelectionChange={(keys) => {
-              const id = Array.from(keys)[0] as string;
-              setNewReport((f) => ({ ...f, studentRecordId: id ?? "" }));
-            }}
-            variant="bordered"
-            radius="lg"
-          >
-            {assignedStudents.map((s) => (
-              <SelectItem key={s.id} textValue={s.studentId}>
-                {s.name} ({s.studentId})
-              </SelectItem>
-            ))}
-          </Select>
-          <Input label="Report Title" value={newReport.title} onValueChange={(v) => setNewReport((f) => ({ ...f, title: v }))} variant="bordered" radius="lg" />
-          <Input label="Marks (%)" type="number" min={0} max={100} value={newReport.marks} onValueChange={(v) => setNewReport((f) => ({ ...f, marks: v }))} variant="bordered" radius="lg" />
-          <Textarea label="Evaluation" minRows={4} value={newReport.evaluation} onValueChange={(v) => setNewReport((f) => ({ ...f, evaluation: v }))} variant="bordered" radius="lg" placeholder="Enter evaluation notes..." />
-        </div>
-      </AppModal>
-
-      <AppModal
-        isOpen={!!selected && !!action}
-        onClose={() => { setSelected(null); setAction(null); }}
-        title={action === "approve" ? "Approve & Add Marks" : action === "reject" ? "Reject Report" : "Report Details"}
+        size="3xl"
         footer={
-          action !== "evaluate" ? (
+          reviewMode === "view" ? (
+            <Button variant="light" onPress={closeModal}>Close</Button>
+          ) : (
             <>
-              <Button variant="light" onPress={() => { setSelected(null); setAction(null); }}>Cancel</Button>
-              <Button color={action === "approve" ? "success" : "danger"} isLoading={submitting} onPress={handleSubmit}>
-                Confirm
+              <Button variant="light" onPress={closeModal}>Cancel</Button>
+              <Button
+                color={reviewMode === "accept" ? "success" : "danger"}
+                isLoading={submitting}
+                onPress={() =>
+                  handleSaveReview(reviewMode === "accept" ? "accepted" : "rejected")
+                }
+              >
+                Save &amp; {reviewMode === "accept" ? "Accept" : "Reject"}
               </Button>
             </>
-          ) : (
-            <Button variant="light" onPress={() => { setSelected(null); setAction(null); }}>Close</Button>
           )
         }
       >
         {selected && (
-          <div className="space-y-4">
-            <div>
-              <p className="font-medium">{selected.title}</p>
-              <p className="text-sm text-text-secondary">{selected.studentName} · {capitalize(selected.type)}</p>
+          <div className="space-y-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="font-medium text-text-primary">{selected.period}</span>
+              <ReportStatusBadge status={selected.status} />
             </div>
-            <p className="rounded-lg bg-surface-sidebar p-3 text-sm">{selected.content}</p>
-            {(action === "approve" || action === "evaluate") && (
-              <Input label="Marks (%)" type="number" value={score} onValueChange={setScore} variant="bordered" radius="lg" isReadOnly={action === "evaluate"} />
+            <p className="text-sm text-text-secondary">{selected.excerpt}</p>
+
+            <div>
+              <p className="mb-2 text-sm font-semibold text-text-primary">Submitted PDF</p>
+              <PdfViewer url={selected.pdfUrl} fileName={selected.pdfFileName} />
+            </div>
+
+            <Input
+              label="Marks (numeric)"
+              type="number"
+              min={0}
+              max={100}
+              value={marks}
+              onValueChange={setMarks}
+              variant="bordered"
+              radius="lg"
+              isReadOnly={reviewMode === "view" && selected.status !== "pending"}
+              description="Enter a score from 0 to 100"
+            />
+            <Textarea
+              label="Review Comments / Feedback"
+              value={feedback}
+              onValueChange={setFeedback}
+              variant="bordered"
+              radius="lg"
+              minRows={4}
+              isReadOnly={reviewMode === "view" && selected.status !== "pending"}
+              placeholder="Provide detailed feedback for the student..."
+            />
+
+            {reviewMode === "view" && selected.status === "pending" && (
+              <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+                <Button color="success" startContent={<Check size={16} />} onPress={() => setReviewMode("accept")}>
+                  Accept Report
+                </Button>
+                <Button color="danger" variant="flat" startContent={<X size={16} />} onPress={() => setReviewMode("reject")}>
+                  Reject Report
+                </Button>
+              </div>
             )}
-            <Textarea label="Feedback / Evaluation" value={feedback} onValueChange={setFeedback} variant="bordered" radius="lg" minRows={4} isReadOnly={action === "evaluate"} />
           </div>
         )}
       </AppModal>

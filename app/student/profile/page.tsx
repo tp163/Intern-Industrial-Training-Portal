@@ -3,6 +3,8 @@
 import { PortalPageHeader } from "@/components/student/portal-page-header";
 import { ContentCard } from "@/components/ui/page-header";
 import { currentStudent } from "@/data/mock";
+import { useAppStore } from "@/lib/store/app-store";
+import { notifySuccess } from "@/lib/notify";
 import { formFieldClassNames, getInitials } from "@/lib/utils";
 import {
   Avatar,
@@ -17,6 +19,7 @@ import { useState } from "react";
 const programs = ["Computer Science", "Information Technology", "Software Engineering"];
 
 export default function StudentProfilePage() {
+  const { updateStudentRecord } = useAppStore();
   const [form, setForm] = useState({
     name: currentStudent.name,
     email: currentStudent.email,
@@ -32,7 +35,23 @@ export default function StudentProfilePage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    setTimeout(() => setSaving(false), 800);
+    setTimeout(() => {
+      updateStudentRecord(
+        currentStudent.id,
+        {
+          name: form.name,
+          email: form.email,
+          phone: form.phone,
+          program: form.program,
+          year: Number(form.year) || currentStudent.year,
+          gpa: form.gpa ? Number(form.gpa) : undefined,
+          department: form.department,
+        },
+        "personal and academic profile information"
+      );
+      setSaving(false);
+      notifySuccess("Profile updated. Administrator has been notified.");
+    }, 700);
   };
 
   const update = (field: keyof typeof form, value: string) => {

@@ -4,11 +4,16 @@ import { AppModal } from "@/components/ui/app-modal";
 import { ContentCard, EmptyState, PageHeader } from "@/components/ui/page-header";
 import { TableScroll } from "@/components/ui/table-scroll";
 import { SearchBar } from "@/components/ui/search-bar";
-import { companies, internships } from "@/data/mock";
-import { formatDate } from "@/lib/utils";
+import { internships } from "@/data/mock";
+import { useAppStore } from "@/lib/store/app-store";
+import { notifySuccess } from "@/lib/notify";
+import { formatDate, formFieldClassNames } from "@/lib/utils";
 import type { Company } from "@/types";
 import {
   Button,
+  Input,
+  Select,
+  SelectItem,
   Table,
   TableBody,
   TableCell,
@@ -16,12 +21,26 @@ import {
   TableHeader,
   TableRow,
 } from "@heroui/react";
-import { Briefcase, Building2 } from "lucide-react";
+import { Briefcase, Building2, Plus, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
 
+const emptyForm = {
+  name: "",
+  industry: "",
+  location: "",
+  email: "",
+  phone: "",
+  description: "",
+  companyLetter: "",
+  status: "approved" as Company["status"],
+};
+
 export default function AdminCompaniesPage() {
+  const { companies, addCompany, removeCompany } = useAppStore();
   const [search, setSearch] = useState("");
   const [viewCompany, setViewCompany] = useState<Company | null>(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState(emptyForm);
 
   const filtered = useMemo(() => {
     if (!search) return companies;
@@ -32,7 +51,14 @@ export default function AdminCompaniesPage() {
         c.industry.toLowerCase().includes(q) ||
         (c.companyLetter?.toLowerCase().includes(q) ?? false)
     );
-  }, [search]);
+  }, [companies, search]);
+
+  const handleAdd = () => {
+    addCompany({ ...form, website: undefined, logo: undefined });
+    notifySuccess("Company added. Student and supervisor directories updated.");
+    setShowAdd(false);
+    setForm(emptyForm);
+  };
 
   const companyInternships = useMemo(() => {
     if (!viewCompany) return [];
@@ -43,7 +69,12 @@ export default function AdminCompaniesPage() {
     <div className="space-y-6">
       <PageHeader
         title="Company Directory"
-        description="Partner companies and memorandum of understanding records"
+        description="Manage the central company directory — changes sync to student and supervisor portals"
+        action={
+          <Button color="primary" radius="lg" startContent={<Plus size={16} />} onPress={() => setShowAdd(true)}>
+            Add Company
+          </Button>
+        }
       />
 
       <ContentCard>
@@ -70,7 +101,9 @@ export default function AdminCompaniesPage() {
             <TableColumn>INDUSTRY</TableColumn>
             <TableColumn>LOCATION</TableColumn>
             <TableColumn>REGISTERED</TableColumn>
+            <TableColumn>STATUS</TableColumn>
             <TableColumn>INTERNSHIPS</TableColumn>
+            <TableColumn>ACTIONS</TableColumn>
           </TableHeader>
           <TableBody>
             {filtered.map((company) => (
@@ -89,6 +122,7 @@ export default function AdminCompaniesPage() {
                 <TableCell>{company.industry}</TableCell>
                 <TableCell>{company.location}</TableCell>
                 <TableCell>{formatDate(company.createdAt)}</TableCell>
+                <TableCell className="capitalize">{company.status}</TableCell>
                 <TableCell>
                   <Button
                     size="sm"
@@ -99,6 +133,21 @@ export default function AdminCompaniesPage() {
                     onPress={() => setViewCompany(company)}
                   >
                     View Internships
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    color="danger"
+                    variant="light"
+                    aria-label="Remove company"
+                    onPress={() => {
+                      removeCompany(company.id);
+                      notifySuccess("Company removed from directory.");
+                    }}
+                  >
+                    <Trash2 size={16} />
                   </Button>
                 </TableCell>
               </TableRow>
@@ -139,6 +188,33 @@ export default function AdminCompaniesPage() {
             ))}
           </ul>
         )}
+      </AppModal>
+
+      <AppModal
+        isOpen={showAdd}
+        onClose={() => setShowAdd(false)}
+        title="Add Company"
+        footer={
+          <>
+            <Button variant="light" onPress={() => setShowAdd(false)}>Cancel</Button>
+            <Button color="primary" onPress={handleAdd}>Add Company</Button>
+          </>
+        }
+      >
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Input label="Company Name" value={form.name} onValueChange={(v) => setForm((f) => ({ ...f, name: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} className="sm:col-span-2" />
+          <Input label="Industry" value={form.industry} onValueChange={(v) => setForm((f) => ({ ...f, industry: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
+          <Input label="Location" value={form.location} onValueChange={(v) => setForm((f) => ({ ...f, location: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
+          <Input label="Email" value={form.email} onValueChange={(v) => setForm((f) => ({ ...f, email: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
+          <Input label="Phone" value={form.phone} onValueChange={(v) => setForm((f) => ({ ...f, phone: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
+          <Input label="Company Letter" value={form.companyLetter} onValueChange={(v) => setForm((f) => ({ ...f, companyLetter: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
+          <Select label="Status" selectedKeys={[form.status]} onSelectionChange={(keys) => { const v = Array.from(keys)[0] as Company["status"]; if (v) setForm((f) => ({ ...f, status: v })); }} variant="bordered" radius="lg">
+            <SelectItem key="approved">Approved</SelectItem>
+            <SelectItem key="pending">Pending</SelectItem>
+            <SelectItem key="rejected">Rejected</SelectItem>
+          </Select>
+          <Input label="Description" value={form.description} onValueChange={(v) => setForm((f) => ({ ...f, description: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} className="sm:col-span-2" />
+        </div>
       </AppModal>
     </div>
   );

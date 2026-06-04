@@ -1,5 +1,6 @@
 "use client";
 
+import { AppStoreProvider } from "@/lib/store/app-store";
 import { HeroUIProvider, ToastProvider } from "@heroui/react";
 import { ThemeProvider as NextThemesProvider } from "next-themes";
 import { useRouter } from "next/navigation";
@@ -11,7 +12,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <HeroUIProvider navigate={router.push}>
       <NextThemesProvider attribute="class" defaultTheme="light" enableSystem>
         <ToastProvider placement="top-right" toastOffset={16} />
-        {children}
+        <AppStoreProvider>{children}</AppStoreProvider>
       </NextThemesProvider>
     </HeroUIProvider>
   );

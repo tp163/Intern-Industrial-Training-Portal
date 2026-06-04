@@ -14,6 +14,7 @@ import {
   FolderTree,
   GraduationCap,
   LayoutDashboard,
+  Megaphone,
   Rocket,
   Settings,
   TrendingUp,
@@ -42,6 +43,7 @@ const iconMap: Record<string, LucideIcon> = {
   TrendingUp,
   Clock,
   Rocket,
+  Megaphone,
   AlertCircle,
 };
 

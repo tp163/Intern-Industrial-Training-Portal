@@ -3,6 +3,7 @@
 import { PortalPageHeader } from "@/components/student/portal-page-header";
 import { ContentCard } from "@/components/ui/page-header";
 import { currentStudent } from "@/data/mock";
+import { useAppStore } from "@/lib/store/app-store";
 import { notifySuccess } from "@/lib/notify";
 import { formatDate } from "@/lib/utils";
 import { Button, Chip } from "@heroui/react";
@@ -11,6 +12,7 @@ import { getInitialCvFileName, setStoredCvFileName } from "@/lib/cv-storage";
 import { useEffect, useRef, useState } from "react";
 
 export default function StudentCvPage() {
+  const { updateStudentRecord } = useAppStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
 
@@ -30,8 +32,13 @@ export default function StudentCvPage() {
       setFileName(file.name);
       setStoredCvFileName(file.name);
       setLastUpdated(new Date().toISOString().slice(0, 10));
+      updateStudentRecord(
+        currentStudent.id,
+        { cvFileName: file.name, cvUrl: `/uploads/${file.name}` },
+        "CV document"
+      );
       setUploading(false);
-      notifySuccess("CV uploaded successfully.");
+      notifySuccess("CV uploaded successfully. Administrator has been notified.");
     }, 900);
   };
 
@@ -39,7 +46,8 @@ export default function StudentCvPage() {
     setFileName(null);
     setStoredCvFileName(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
-    notifySuccess("CV removed.");
+    updateStudentRecord(currentStudent.id, { cvFileName: undefined, cvUrl: undefined }, "CV removal");
+    notifySuccess("CV removed. Administrator has been notified.");
   };
 
   const handleDownload = () => {
