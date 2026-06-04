@@ -1,5 +1,5 @@
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { currentSupervisor } from "@/data/mock";
+import { currentSupervisor, supervisorConsoleMeta } from "@/data/mock";
 import { roleLabels, supervisorNavItems } from "@/lib/navigation";
 
 export default function SupervisorLayout({ children }: { children: React.ReactNode }) {
@@ -9,6 +9,11 @@ export default function SupervisorLayout({ children }: { children: React.ReactNo
       roleLabel={roleLabels.supervisor}
       userName={currentSupervisor.name}
       userEmail={currentSupervisor.email}
+      profileHref="/supervisor/settings"
+      variant="portal"
+      userRoleBadge="Faculty Supervisor"
+      consoleTitle={supervisorConsoleMeta.consoleTitle}
+      consoleVersion={supervisorConsoleMeta.consoleVersion}
     >
       {children}
     </DashboardLayout>

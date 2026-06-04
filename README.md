@@ -47,7 +47,7 @@ Use the login page and select a role (Student, Supervisor, or Admin). Any creden
 
 ### Admin
 - `/admin/dashboard`
-- `/admin/students`
+- `/admin/supervisor-student-directory`
 - `/admin/supervisors`
 - `/admin/companies`
 - `/admin/internships`

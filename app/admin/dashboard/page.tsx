@@ -1,94 +1,105 @@
 "use client";
 
-import { ContentCard, PageHeader } from "@/components/ui/page-header";
-import { StatCard } from "@/components/ui/stat-card";
-import { adminDashboardStats, analyticsData } from "@/data/mock";
+import { adminFacultyDashboard } from "@/data/mock";
+import { cn } from "@/lib/utils";
+import { Button } from "@heroui/react";
+import { AlertTriangle } from "lucide-react";
+import Link from "next/link";
+
+const severityDot = {
+  danger: "bg-danger",
+  warning: "bg-warning",
+};
 
 export default function AdminDashboardPage() {
-  const maxCount = Math.max(...analyticsData.monthlyApplications.map((d) => d.count));
+  const {
+    title,
+    subtitle,
+    totalStudents,
+    departments,
+    activeInternships,
+    pendingReviews,
+    actionRequired,
+  } = adminFacultyDashboard;
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        title="Admin Dashboard"
-        description="System overview and key metrics"
-      />
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {adminDashboardStats.map((stat) => (
-          <StatCard key={stat.label} stat={stat} />
-        ))}
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight text-text-primary md:text-3xl">{title}</h1>
+        <p className="mt-2 max-w-3xl text-sm text-text-secondary">{subtitle}</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <ContentCard title="Monthly Applications">
-          <div className="flex h-48 items-end justify-between gap-3 px-2">
-            {analyticsData.monthlyApplications.map((item) => (
-              <div key={item.month} className="flex flex-1 flex-col items-center gap-2">
-                <div className="flex w-full flex-col items-center justify-end" style={{ height: "160px" }}>
-                  <span className="mb-1 text-xs font-medium text-text-primary">{item.count}</span>
-                  <div
-                    className="w-full max-w-12 rounded-t-lg bg-primary transition-all"
-                    style={{ height: `${(item.count / maxCount) * 100}%`, minHeight: "8px" }}
-                  />
-                </div>
-                <span className="text-xs font-medium text-text-secondary">{item.month}</span>
-              </div>
-            ))}
-          </div>
-        </ContentCard>
-
-        <ContentCard title="Application Status Distribution">
-          <div className="space-y-4">
-            {analyticsData.statusDistribution.map((item) => {
-              const total = analyticsData.statusDistribution.reduce((s, i) => s + i.count, 0);
-              const pct = Math.round((item.count / total) * 100);
-              return (
-                <div key={item.status}>
-                  <div className="mb-1 flex justify-between text-sm">
-                    <span>{item.status}</span>
-                    <span className="text-text-secondary">
-                      {item.count} ({pct}%)
-                    </span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-surface-sidebar">
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{ width: `${pct}%`, backgroundColor: item.color }}
-                    />
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </ContentCard>
-      </div>
-
-      <ContentCard title="Top Companies by Applications">
-        <div className="space-y-3">
-          {analyticsData.topCompanies.map((company, i) => {
-            const maxApps = analyticsData.topCompanies[0].applications;
-            const pct = (company.applications / maxApps) * 100;
-            return (
-              <div key={company.name} className="flex items-center gap-4">
-                <span className="w-6 text-sm font-medium text-text-secondary">{i + 1}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="mb-1 flex justify-between text-sm">
-                    <span className="font-medium">{company.name}</span>
-                    <span className="text-text-secondary">{company.applications}</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full bg-surface-sidebar">
-                    <div
-                      className="h-full rounded-full bg-primary"
-                      style={{ width: `${pct}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+      <div className="rounded-card border border-border/60 bg-white p-6 shadow-card md:p-8">
+        <p className="text-sm font-semibold uppercase tracking-wider text-text-secondary">
+          Total Students
+        </p>
+        <p className="mt-2 text-4xl font-bold text-text-primary md:text-5xl">
+          {totalStudents.toLocaleString()}
+        </p>
+        <div className="mt-6 grid grid-cols-2 gap-4 border-t border-border/60 pt-6 sm:grid-cols-4">
+          {departments.map((dept) => (
+            <div key={dept.name}>
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-text-secondary">
+                {dept.name}
+              </p>
+              <p className="mt-1 text-xl font-bold text-text-primary">{dept.count}</p>
+            </div>
+          ))}
         </div>
-      </ContentCard>
+      </div>
+
+      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="rounded-card bg-primary p-6 text-white shadow-card">
+          <p className="text-sm font-medium opacity-90">Active Internships</p>
+          <p className="mt-2 text-4xl font-bold">{activeInternships.value.toLocaleString()}</p>
+          <p className="mt-4 text-sm opacity-90">{activeInternships.trend}</p>
+        </div>
+
+        <div
+          className="rounded-card p-6 text-white shadow-card"
+          style={{ backgroundColor: "#9B4D4D" }}
+        >
+          <p className="text-sm font-medium opacity-90">Pending Reviews</p>
+          <p className="mt-2 text-4xl font-bold">{pendingReviews.value}</p>
+          <p className="mt-4 text-sm opacity-90">{pendingReviews.detail}</p>
+        </div>
+
+        <div className="rounded-card border border-border/60 bg-white p-6 shadow-card">
+          <div className="mb-5 flex items-center gap-2">
+            <AlertTriangle size={18} className="text-primary" />
+            <h2 className="font-semibold text-text-primary">Action Required</h2>
+          </div>
+          <ul className="space-y-4">
+            {actionRequired.map((item) => (
+              <li key={item.id}>
+                <Link
+                  href={item.href}
+                  className="group flex items-start justify-between gap-3 rounded-button p-2 transition-colors hover:bg-surface-muted"
+                >
+                  <div className="min-w-0">
+                    <p className="font-medium text-text-primary group-hover:text-primary">
+                      {item.label}
+                    </p>
+                    <p className="text-sm text-text-secondary">{item.detail}</p>
+                  </div>
+                  <span
+                    className={cn("mt-1.5 h-2 w-2 shrink-0 rounded-full", severityDot[item.severity])}
+                  />
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <Button
+            as={Link}
+            href="/admin/reports"
+            color="primary"
+            radius="lg"
+            className="mt-6 w-full font-semibold"
+          >
+            View All Tasks
+          </Button>
+        </div>
+      </div>
     </div>
   );
 }

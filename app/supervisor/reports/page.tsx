@@ -30,8 +30,8 @@ export default function SupervisorReportsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Progress Reports"
-        description="Weekly progress reports submitted by your students"
+        title="Reports"
+        description="Monthly reports submitted by your students"
       />
 
       <div className="mb-2">

@@ -5,10 +5,11 @@
 @layer base {
   html {
     scroll-behavior: smooth;
+    font-size: 17px;
   }
 
   body {
-    @apply bg-surface text-text-primary antialiased;
+    @apply bg-surface font-sans text-base text-text-primary antialiased;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 }
@@ -31,11 +32,11 @@
   }
 
   .ds-page-title {
-    @apply text-2xl font-bold tracking-tight text-text-primary;
+    @apply font-sans text-[1.65rem] font-bold leading-tight tracking-tight text-text-primary md:text-[1.85rem];
   }
 
   .ds-page-description {
-    @apply mt-1 text-sm text-text-secondary;
+    @apply mt-1 font-sans text-base text-text-secondary;
   }
 }
 

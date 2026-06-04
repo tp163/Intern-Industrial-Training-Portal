@@ -43,6 +43,7 @@ export function getStatusColor(status: string): "success" | "warning" | "danger"
     approved: "success",
     open: "success",
     active: "success",
+    not_placed: "danger",
     pending: "warning",
     reviewing: "warning",
     draft: "default",

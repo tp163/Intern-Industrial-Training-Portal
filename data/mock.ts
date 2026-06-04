@@ -4,6 +4,7 @@ import type {
   DashboardStat,
   Internship,
   Notification,
+  MonthlyReport,
   ProgressReport,
   Review,
   Student,
@@ -16,12 +17,15 @@ export const currentStudent: Student = {
   name: "Alex Morgan",
   email: "alex.morgan@university.edu",
   role: "student",
-  studentId: "STU2024001",
-  program: "Computer Science",
+  studentId: "ENG-2024-001",
+  program: "Information Management",
   year: 3,
   gpa: 3.75,
   phone: "+1 (555) 123-4567",
   department: "Faculty of Engineering",
+  departmentCode: "IMGT",
+  batch: "2024",
+  internshipStatus: "active",
   avatar: "",
   cvUrl: "/uploads/sarah-johnson-cv.pdf",
   supervisorId: "sup-001",
@@ -30,67 +34,231 @@ export const currentStudent: Student = {
 
 export const currentSupervisor: Supervisor = {
   id: "sup-001",
-  name: "Dr. Michael Chen",
-  email: "m.chen@university.edu",
+  name: "Dr. Sarah Chen",
+  email: "s.chen@university.edu",
   role: "supervisor",
-  title: "Senior Lecturer",
+  title: "Faculty Supervisor",
   phone: "+1 (555) 987-6543",
-  department: "Computer Science",
-  assignedStudents: 12,
+  department: "Applied Sciences",
+  assignedStudents: 128,
   createdAt: "2020-01-15",
+};
+
+export const supervisorConsoleMeta = {
+  facultyName: "Engineering Faculty",
+  consoleTitle: "Applied Sciences Console",
+  consoleVersion: "v1.1",
 };
 
 export const currentAdmin = {
   id: "adm-001",
-  name: "Admin User",
-  email: "admin@training.edu",
+  name: "Alex Morgan",
+  email: "alex.morgan@university.edu",
   role: "admin" as const,
   permissions: ["all"],
   createdAt: "2019-06-01",
+};
+
+export const adminConsoleMeta = {
+  consoleTitle: "Applied Sciences Console",
+  consoleVersion: "v1.1",
+};
+
+export const adminFacultyDashboard = {
+  title: "Applied Sciences Faculty Dashboard",
+  subtitle:
+    "Overview of student placements and faculty performance for Academic Year 2024.",
+  totalStudents: 1248,
+  departments: [
+    { name: "Comp Science", count: 412 },
+    { name: "Electrical", count: 298 },
+    { name: "Mathematical", count: 315 },
+    { name: "Industrial", count: 223 },
+  ],
+  activeInternships: {
+    value: 856,
+    trend: "12% increase from last term",
+  },
+  pendingReviews: {
+    value: 42,
+    detail: "Average response time: 2.4 days",
+  },
+  actionRequired: [
+    {
+      id: "act-001",
+      label: "Unassigned Students",
+      detail: "15 students",
+      severity: "danger" as const,
+      href: "/admin/supervisor-student-directory",
+    },
+    {
+      id: "act-002",
+      label: "Overdue Logbooks",
+      detail: "28 entries",
+      severity: "danger" as const,
+      href: "/admin/reports",
+    },
+    {
+      id: "act-003",
+      label: "MOU Expiration",
+      detail: "3 partner companies",
+      severity: "warning" as const,
+      href: "/admin/companies",
+    },
+  ],
 };
 
 export const students: Student[] = [
   currentStudent,
   {
     id: "stu-002",
-    name: "James Wilson",
-    email: "james.w@university.edu",
+    name: "Marcus Adebayo",
+    email: "marcus.a@university.edu",
     role: "student",
-    studentId: "STU2024002",
-    program: "Information Technology",
+    studentId: "ENG-2024-042",
+    program: "Electronics Engineering",
     year: 4,
     gpa: 3.5,
     phone: "+1 (555) 234-5678",
     department: "Faculty of Engineering",
+    departmentCode: "Electronics",
+    batch: "2024",
+    internshipStatus: "pending",
     supervisorId: "sup-001",
     createdAt: "2024-09-01",
   },
   {
     id: "stu-003",
-    name: "Emily Davis",
-    email: "emily.d@university.edu",
+    name: "Sophie Laurent",
+    email: "sophie.l@university.edu",
     role: "student",
-    studentId: "STU2024003",
-    program: "Software Engineering",
+    studentId: "ENG-2024-015",
+    program: "Information Management",
     year: 3,
     gpa: 3.9,
     phone: "+1 (555) 345-6789",
     department: "Faculty of Engineering",
+    departmentCode: "IMGT",
+    batch: "2023",
+    internshipStatus: "active",
     supervisorId: "sup-002",
     createdAt: "2024-09-01",
   },
   {
     id: "stu-004",
-    name: "David Brown",
-    email: "david.b@university.edu",
+    name: "David Kim",
+    email: "david.k@university.edu",
     role: "student",
-    studentId: "STU2024004",
+    studentId: "ENG-2024-088",
     program: "Computer Science",
     year: 2,
     gpa: 3.2,
     phone: "+1 (555) 456-7890",
     department: "Faculty of Engineering",
+    departmentCode: "CS",
+    batch: "2024",
+    internshipStatus: "not_placed",
     supervisorId: "sup-001",
+    createdAt: "2024-09-01",
+  },
+  {
+    id: "stu-005",
+    name: "James Wilson",
+    email: "james.w@university.edu",
+    role: "student",
+    studentId: "ENG-2024-033",
+    program: "Information Technology",
+    year: 4,
+    gpa: 3.6,
+    department: "Faculty of Engineering",
+    departmentCode: "IT",
+    batch: "2024",
+    internshipStatus: "active",
+    supervisorId: "sup-001",
+    createdAt: "2024-09-01",
+  },
+  {
+    id: "stu-006",
+    name: "Emily Davis",
+    email: "emily.d@university.edu",
+    role: "student",
+    studentId: "ENG-2024-021",
+    program: "Software Engineering",
+    year: 3,
+    gpa: 3.8,
+    department: "Faculty of Engineering",
+    departmentCode: "SE",
+    batch: "2024",
+    internshipStatus: "pending",
+    supervisorId: "sup-001",
+    createdAt: "2024-09-01",
+  },
+  {
+    id: "stu-007",
+    name: "Aisha Patel",
+    email: "aisha.p@university.edu",
+    role: "student",
+    studentId: "ENG-2024-056",
+    program: "Electronics Engineering",
+    year: 3,
+    gpa: 3.4,
+    department: "Faculty of Engineering",
+    departmentCode: "Electronics",
+    batch: "2023",
+    internshipStatus: "active",
+    supervisorId: "sup-001",
+    createdAt: "2024-09-01",
+  },
+  {
+    id: "stu-008",
+    name: "Noah Thompson",
+    email: "noah.t@university.edu",
+    role: "student",
+    studentId: "ENG-2024-072",
+    program: "Information Management",
+    year: 2,
+    gpa: 3.1,
+    department: "Faculty of Engineering",
+    departmentCode: "IMGT",
+    batch: "2024",
+    internshipStatus: "not_placed",
+    supervisorId: "sup-001",
+    createdAt: "2024-09-01",
+  },
+];
+
+/** University registry — students eligible for directory lookup but not yet added */
+export const studentRegistry: Student[] = [
+  {
+    id: "reg-001",
+    name: "Ryan Cooper",
+    email: "ryan.cooper@university.edu",
+    role: "student",
+    studentId: "ENG-2024-099",
+    program: "Computer Science",
+    year: 3,
+    gpa: 3.55,
+    phone: "+1 (555) 111-2233",
+    department: "Faculty of Engineering",
+    departmentCode: "CMIS",
+    batch: "2024",
+    internshipStatus: "not_placed",
+    createdAt: "2024-09-01",
+  },
+  {
+    id: "reg-002",
+    name: "Priya Nair",
+    email: "priya.nair@university.edu",
+    role: "student",
+    studentId: "ENG-2024-110",
+    program: "Management Studies",
+    year: 2,
+    gpa: 3.7,
+    phone: "+1 (555) 222-3344",
+    department: "Faculty of Engineering",
+    departmentCode: "Management",
+    batch: "2025",
+    internshipStatus: "not_placed",
     createdAt: "2024-09-01",
   },
 ];
@@ -131,6 +299,7 @@ export const companies: Company[] = [
     phone: "+1 (555) 111-2222",
     website: "https://technova.com",
     status: "approved",
+    companyLetter: "MOU-2024-A",
     description: "Leading software development company specializing in enterprise solutions.",
     createdAt: "2024-01-15",
   },
@@ -143,6 +312,7 @@ export const companies: Company[] = [
     phone: "+1 (555) 333-4444",
     website: "https://dataflow.com",
     status: "approved",
+    companyLetter: "MOU-2024-B",
     description: "Data analytics and machine learning consultancy.",
     createdAt: "2024-02-20",
   },
@@ -154,6 +324,7 @@ export const companies: Company[] = [
     email: "hr@greenenergy.com",
     phone: "+1 (555) 555-6666",
     status: "pending",
+    companyLetter: "MOU-2024-C",
     description: "Renewable energy solutions provider.",
     createdAt: "2024-11-01",
   },
@@ -166,6 +337,7 @@ export const companies: Company[] = [
     phone: "+1 (555) 777-8888",
     website: "https://finserve.com",
     status: "approved",
+    companyLetter: "MOU-2024-D",
     description: "Financial services and fintech innovation.",
     createdAt: "2024-03-10",
   },
@@ -187,6 +359,7 @@ export const internships: Internship[] = [
     applied: 23,
     status: "open",
     stipend: "$2,500/month",
+    departmentCategory: "CMIS",
   },
   {
     id: "int-002",
@@ -203,6 +376,7 @@ export const internships: Internship[] = [
     applied: 18,
     status: "open",
     stipend: "$3,000/month",
+    departmentCategory: "IMGT",
   },
   {
     id: "int-003",
@@ -219,6 +393,7 @@ export const internships: Internship[] = [
     applied: 31,
     status: "open",
     stipend: "$2,200/month",
+    departmentCategory: "CMIS",
   },
   {
     id: "int-004",
@@ -235,6 +410,7 @@ export const internships: Internship[] = [
     applied: 15,
     status: "open",
     stipend: "$2,800/month",
+    departmentCategory: "Management",
   },
   {
     id: "int-005",
@@ -251,8 +427,11 @@ export const internships: Internship[] = [
     applied: 12,
     status: "closed",
     stipend: "$2,600/month",
+    departmentCategory: "Electronic",
   },
 ];
+
+export const departmentCategories = ["CMIS", "IMGT", "Management", "Electronic"] as const;
 
 export const applications: Application[] = [
   {
@@ -302,9 +481,9 @@ export const reviews: Review[] = [
   {
     id: "rev-001",
     studentId: "stu-001",
-    studentName: "Sarah Johnson",
+    studentName: "Alex Morgan",
     supervisorId: "sup-001",
-    title: "Week 4 Progress Review",
+    title: "Monthly Report #3",
     type: "weekly",
     submittedAt: "2025-04-20",
     status: "pending",
@@ -350,11 +529,53 @@ export const reviews: Review[] = [
   },
 ];
 
+export const monthlyReports: MonthlyReport[] = [
+  {
+    id: "mr-003",
+    studentId: "stu-001",
+    monthNumber: 3,
+    period: "Oct 2024",
+    status: "pending",
+    isCurrent: true,
+    excerpt:
+      "This month I focused on integrating the client API layer and improving test coverage across the placement module. Key milestones included completing the weekly sync with my industry mentor and documenting lessons learned in the reflective journal.",
+  },
+  {
+    id: "mr-002",
+    studentId: "stu-001",
+    monthNumber: 2,
+    period: "Sep 2024",
+    status: "reviewed",
+    rating: 5,
+    feedback:
+      "Excellent reflective depth and clear evidence of professional growth. Your analysis of stakeholder communication was particularly strong.",
+    excerpt:
+      "Expanded responsibilities in the product team, led a small UX review session, and delivered the mid-month progress presentation to supervisors.",
+  },
+  {
+    id: "mr-001",
+    studentId: "stu-001",
+    monthNumber: 1,
+    period: "Aug 2024",
+    status: "reviewed",
+    rating: 4,
+    feedback:
+      "Solid first submission. Consider adding more quantitative outcomes in your next report.",
+    excerpt:
+      "Completed onboarding, shadowed senior developers, and contributed to documentation updates for the internal training wiki.",
+  },
+];
+
+export const studentReportProgress = {
+  completed: 3,
+  total: 6,
+};
+
 export const progressReports: ProgressReport[] = [
   {
     id: "pr-001",
     studentId: "stu-001",
-    studentName: "Sarah Johnson",
+    studentName: "Alex Morgan",
     week: 4,
     submittedAt: "2025-04-20",
     status: "pending",
@@ -411,6 +632,12 @@ export const studentDashboardStats: DashboardStat[] = [
 
 export const studentPortalDashboard = {
   activeCompany: "TechCorp",
+  reportProgress: {
+    percent: 50,
+    monthsCompleted: 3,
+    monthsRemaining: 3,
+  },
+  /** @deprecated use reportProgress */
   internshipProgress: {
     percent: 50,
     monthsCompleted: 3,
@@ -460,7 +687,6 @@ export const supervisorDashboardStats: DashboardStat[] = [
   { label: "Assigned Students", value: 12, change: "+2 this semester", trend: "up", icon: "Users" },
   { label: "Pending Reviews", value: 5, change: "2 overdue", trend: "down", icon: "FileCheck" },
   { label: "Approved This Month", value: 8, change: "+3 from last month", trend: "up", icon: "CheckCircle" },
-  { label: "Avg. Score", value: "82%", change: "+5% improvement", trend: "up", icon: "TrendingUp" },
 ];
 
 export const adminDashboardStats: DashboardStat[] = [

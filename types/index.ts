@@ -9,6 +9,10 @@ export type ApplicationStatus =
 
 export type ReviewStatus = "pending" | "approved" | "rejected";
 
+export type InternshipPlacementStatus = "active" | "pending" | "not_placed";
+
+export type DepartmentCategory = "CMIS" | "IMGT" | "Management" | "Electronic";
+
 export interface User {
   id: string;
   name: string;
@@ -28,6 +32,9 @@ export interface Student extends User {
   gpa?: number;
   cvUrl?: string;
   supervisorId?: string;
+  departmentCode?: string;
+  batch?: string;
+  internshipStatus?: InternshipPlacementStatus;
 }
 
 export interface Supervisor extends User {
@@ -52,6 +59,7 @@ export interface Company {
   status: "pending" | "approved" | "rejected";
   logo?: string;
   description: string;
+  companyLetter?: string;
   createdAt: string;
 }
 
@@ -70,6 +78,7 @@ export interface Internship {
   applied: number;
   status: "open" | "closed" | "draft";
   stipend?: string;
+  departmentCategory?: DepartmentCategory;
 }
 
 export interface Application {
@@ -98,6 +107,20 @@ export interface Review {
   score?: number;
 }
 
+export type MonthlyReportStatus = "pending" | "reviewed";
+
+export interface MonthlyReport {
+  id: string;
+  studentId: string;
+  monthNumber: number;
+  period: string;
+  status: MonthlyReportStatus;
+  excerpt: string;
+  feedback?: string;
+  rating?: number;
+  isCurrent?: boolean;
+}
+
 export interface ProgressReport {
   id: string;
   studentId: string;
@@ -119,6 +142,7 @@ export interface DashboardStat {
 }
 
 export interface NavItem {
+  id?: string;
   label: string;
   href: string;
   icon: string;

@@ -1,7 +1,8 @@
 "use client";
 
 import { ContentCard, PageHeader } from "@/components/ui/page-header";
-import { systemSettings } from "@/data/mock";
+import { adminSettings } from "@/lib/settings";
+import { notifySuccess } from "@/lib/notify";
 import type { SystemSetting } from "@/types";
 import {
   Button,
@@ -14,7 +15,7 @@ import { Save } from "lucide-react";
 import { useState } from "react";
 
 export default function AdminSettingsPage() {
-  const [settings, setSettings] = useState<SystemSetting[]>(systemSettings);
+  const [settings, setSettings] = useState<SystemSetting[]>(adminSettings);
   const [saving, setSaving] = useState(false);
 
   const updateSetting = (id: string, value: string | boolean | number) => {
@@ -24,7 +25,10 @@ export default function AdminSettingsPage() {
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    setTimeout(() => setSaving(false), 800);
+    setTimeout(() => {
+      setSaving(false);
+      notifySuccess("Settings saved successfully.");
+    }, 800);
   };
 
   return (
