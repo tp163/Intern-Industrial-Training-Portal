@@ -1,7 +1,8 @@
-<<<<<<< HEAD
-# Intern & Industrial Training System (Frontend)
+# Intern & Industrial Training System
 
-A frontend-only Next.js 15 application for managing internships, applications, and industrial training progress.
+A web-based platform connecting university students with companies offering internships and industrial training opportunities. Students can create profiles, upload CVs, and apply for vacancies, while supervisors and admins manage recruitment, reviews, and reporting through a centralized system.
+
+This repository currently contains the **frontend** — a Next.js 15 application for managing internships, applications, and training progress.
 
 ## Tech Stack
 
@@ -56,14 +57,13 @@ Use the login page and select a role (Student, Supervisor, or Admin). Any creden
 
 ## Project Structure
 
-```
-app/           # Next.js App Router pages
-components/    # Reusable UI components
-data/          # Mock JSON data
-lib/           # Utilities and navigation config
-types/         # TypeScript types
-public/        # Static assets
-```
+app/ # Next.js App Router pages
+components/ # Reusable UI components
+data/ # Mock JSON data
+lib/ # Utilities and navigation config
+types/ # TypeScript types
+public/ # Static assets
+
 
 ## Notes
 
@@ -74,7 +74,3 @@ public/        # Static assets
 ## Windows Path Note
 
 If your project folder contains `&` in the name, npm scripts use direct `node` paths to avoid Windows shell issues.
-=======
-# Intern-Industrial-Training-Portal
-The Intern and Industrial Training System is a web-based platform that connects university students with companies offering internships and training opportunities. Students can create profiles, upload CVs, and apply for vacancies, while companies can post opportunities, search candidates, and manage recruitment through a centralized system.
->>>>>>> dfd6de926376bf1fdb6ffc82b0d673cc361b0829
