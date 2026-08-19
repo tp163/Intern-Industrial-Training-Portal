@@ -33,3 +33,9 @@ next-env.d.ts
 
 # vercel
 .vercel
+
+node_modules/
+.next/
+.env
+.env.local
+.env.*.local
