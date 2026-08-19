@@ -5,40 +5,65 @@ import { PdfViewer } from "@/components/reports/pdf-viewer";
 import { TableScroll } from "@/components/ui/table-scroll";
 import { ReportStatusBadge } from "@/components/reports/report-status-badge";
 import { InternshipStatusPill } from "@/components/supervisor/internship-status-pill";
-import { currentSupervisor, supervisorConsoleMeta } from "@/data/mock";
 import { useAppStore } from "@/lib/store/app-store";
-import { getInitialCvFileName } from "@/lib/cv-storage";
+import { apiCreateTrainingRecord, apiListConductRecords, apiListTrainingRecords } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
 import { getInitials } from "@/lib/utils";
 import type { Student } from "@/types";
 import {
   Avatar,
   Button,
+  Input,
+  Select,
+  SelectItem,
   Table,
   TableBody,
   TableCell,
   TableColumn,
   TableHeader,
   TableRow,
+  Textarea,
 } from "@heroui/react";
 import { Download, Eye, FileText, Search } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
 export default function SupervisorStudentsPage() {
-  const { students, getReportsForStudent } = useAppStore();
+  const { students, supervisors, getReportsForStudent, currentUser, loadRealData } = useAppStore();
+  const supervisorRecord = useMemo(
+    () =>
+      supervisors.find((supervisor) => supervisor.id === currentUser?.id) ??
+      supervisors.find((supervisor) => supervisor.email === currentUser?.email),
+    [currentUser?.email, currentUser?.id, supervisors]
+  );
+  const supervisorId = supervisorRecord?.id ?? currentUser?.id ?? "";
   const [search, setSearch] = useState("");
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [cvPreviewUrl, setCvPreviewUrl] = useState<string | undefined>();
+  const [visit, setVisit] = useState({ proposedDate: "", actualDate: "", mode: "On site", observations: "", actions: "", providerFeedback: "" });
+  const [visits, setVisits] = useState<Record<string, unknown>[]>([]);
+  const [meetings, setMeetings] = useState<Record<string, unknown>[]>([]);
+  const [placementConfirmations, setPlacementConfirmations] = useState<Record<string, unknown>[]>([]);
+  const [commencementConfirmations, setCommencementConfirmations] = useState<Record<string, unknown>[]>([]);
+  const [weeklyCertifications, setWeeklyCertifications] = useState<Record<string, unknown>[]>([]);
+  const [conductRecords, setConductRecords] = useState<Array<Record<string, unknown> & { kind: string }>>([]);
+  const [meeting, setMeeting] = useState({ date: "", type: "Monthly progress", attended: true, notes: "" });
+
+  useEffect(() => {
+    loadRealData();
+  }, [loadRealData]);
 
   const assignedStudents = useMemo(
-    () => students.filter((s) => s.supervisorId === currentSupervisor.id),
-    [students]
+    () => students.filter((s) => s.supervisorId === supervisorId),
+    [students, supervisorId]
   );
 
   const filtered = useMemo(() => {
-    if (!search) return assignedStudents;
-    const q = search.toLowerCase();
+    const q = search.trim().toLocaleLowerCase();
+    if (!q) return assignedStudents;
     return assignedStudents.filter(
-      (s) => s.name.toLowerCase().includes(q) || s.studentId.toLowerCase().includes(q)
+      (s) =>
+        [s.name, s.studentId, s.email]
+          .some((value) => String(value ?? "").toLocaleLowerCase().includes(q))
     );
   }, [assignedStudents, search]);
 
@@ -47,12 +72,8 @@ export default function SupervisorStudentsPage() {
       setCvPreviewUrl(undefined);
       return;
     }
-    const cvName =
-      selectedStudent.id === "stu-001"
-        ? getInitialCvFileName(selectedStudent.cvFileName ?? "alex-morgan-cv.pdf")
-        : selectedStudent.cvFileName;
-    if (cvName) {
-      setCvPreviewUrl("https://www.w3.org/WAI/WCAG21/Techniques/pdf/img/table-word.pdf");
+    if (selectedStudent.cvUrl) {
+      setCvPreviewUrl(selectedStudent.cvUrl);
     } else {
       setCvPreviewUrl(undefined);
     }
@@ -60,6 +81,82 @@ export default function SupervisorStudentsPage() {
 
   const openProfile = (student: Student) => setSelectedStudent(student);
   const closeModal = () => setSelectedStudent(null);
+  useEffect(() => {
+    if (!selectedStudent) {
+      setVisits([]);
+      setMeetings([]);
+      setPlacementConfirmations([]);
+      setCommencementConfirmations([]);
+      setWeeklyCertifications([]);
+      setConductRecords([]);
+      return;
+    }
+    Promise.all([
+      apiListTrainingRecords("site_visits"),
+      apiListTrainingRecords("meeting_attendance"),
+      apiListTrainingRecords("placement_confirmations"),
+      apiListTrainingRecords("commencement_confirmations"),
+      apiListTrainingRecords("weekly_certifications"),
+      apiListConductRecords("leave_requests"),
+      apiListConductRecords("absence_reports"),
+      apiListConductRecords("placement_change_requests"),
+      apiListConductRecords("student_issues"),
+    ])
+      .then(([visitResult, meetingResult, placementResult, commencementResult, weeklyResult, leaveResult, absenceResult, changeResult, issueResult]) => {
+        setVisits(visitResult.data.filter((item) => String(item.student_id) === selectedStudent.id));
+        setMeetings(meetingResult.data.filter((item) => String(item.student_id) === selectedStudent.id));
+        setPlacementConfirmations(placementResult.data.filter((item) => String(item.student_id) === selectedStudent.id));
+        setCommencementConfirmations(commencementResult.data.filter((item) => String(item.student_id) === selectedStudent.id));
+        setWeeklyCertifications(weeklyResult.data.filter((item) => String(item.student_id) === selectedStudent.id));
+        const submittedConduct = [
+          ...leaveResult.data.map((item) => ({ ...item, kind: "Leave request" })),
+          ...absenceResult.data.map((item) => ({ ...item, kind: "Absence report" })),
+          ...changeResult.data.map((item) => ({ ...item, kind: "Placement change" })),
+          ...issueResult.data.map((item) => ({ ...item, kind: "Reported issue" })),
+        ] as Array<Record<string, unknown> & { kind: string }>;
+        setConductRecords(submittedConduct.filter((item) => String(item.student_id) === selectedStudent.id));
+      })
+      .catch((error) => notifyError(error instanceof Error ? error.message : "Failed to load student training records."));
+  }, [selectedStudent]);
+
+  const saveVisit = async () => {
+    if (!selectedStudent || !visit.proposedDate) return notifyError("Please enter a proposed visit date.");
+    try {
+      await apiCreateTrainingRecord("site_visits", {
+        student_id: selectedStudent.id,
+        supervisor_id: supervisorId,
+        proposed_date: visit.proposedDate,
+        actual_date: visit.actualDate || null,
+        mode: visit.mode,
+        observations: visit.observations,
+        actions_recommended: visit.actions,
+        provider_feedback: visit.providerFeedback,
+        status: visit.actualDate ? "completed" : "scheduled",
+      });
+      const refreshed = await apiListTrainingRecords("site_visits");
+      setVisits(refreshed.data.filter((item) => String(item.student_id) === selectedStudent.id));
+      setVisit({ proposedDate: "", actualDate: "", mode: "On site", observations: "", actions: "", providerFeedback: "" });
+      notifySuccess("Site visit saved.");
+    } catch (error) { notifyError(error instanceof Error ? error.message : "Failed to save site visit."); }
+  };
+
+  const saveMeeting = async () => {
+    if (!selectedStudent || !meeting.date) return notifyError("Please enter the meeting date.");
+    try {
+      await apiCreateTrainingRecord("meeting_attendance", {
+        student_id: selectedStudent.id,
+        supervisor_id: supervisorId,
+        meeting_date: meeting.date,
+        meeting_type: meeting.type,
+        attended: meeting.attended,
+        notes: meeting.notes,
+      });
+      const refreshed = await apiListTrainingRecords("meeting_attendance");
+      setMeetings(refreshed.data.filter((item) => String(item.student_id) === selectedStudent.id));
+      setMeeting({ date: "", type: "Monthly progress", attended: true, notes: "" });
+      notifySuccess("Meeting attendance saved.");
+    } catch (error) { notifyError(error instanceof Error ? error.message : "Failed to save meeting attendance."); }
+  };
 
   const studentReports = selectedStudent
     ? getReportsForStudent(selectedStudent.id)
@@ -69,7 +166,7 @@ export default function SupervisorStudentsPage() {
     <div className="space-y-6">
       <div>
         <p className="text-sm text-text-secondary">
-          {supervisorConsoleMeta.facultyName}{" "}
+          {currentUser?.department ?? "Faculty Supervisor"}{" "}
           <span className="mx-1 text-text-secondary/60">&gt;</span> Students
         </p>
         <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -187,6 +284,40 @@ export default function SupervisorStudentsPage() {
               </div>
             </section>
 
+            <section className="space-y-4">
+              <div><h3 className="text-sm font-semibold uppercase tracking-wide text-text-secondary">Site Visits</h3><p className="mt-1 text-sm text-text-secondary">Schedule a visit or record the completed visit for this student.</p></div>
+              <div className="grid gap-4 sm:grid-cols-2"><Input label="Proposed date" type="date" value={visit.proposedDate} onValueChange={(proposedDate) => setVisit({ ...visit, proposedDate })}/><Input label="Actual date" type="date" value={visit.actualDate} onValueChange={(actualDate) => setVisit({ ...visit, actualDate })}/><Select label="Mode" selectedKeys={[visit.mode]} onSelectionChange={(keys) => setVisit({ ...visit, mode: String(Array.from(keys)[0]) })}><SelectItem key="On site">On site</SelectItem><SelectItem key="Virtual">Virtual</SelectItem></Select></div>
+              <Textarea label="Observations" value={visit.observations} onValueChange={(observations) => setVisit({ ...visit, observations })}/><Textarea label="Actions recommended" value={visit.actions} onValueChange={(actions) => setVisit({ ...visit, actions })}/><Textarea label="Provider feedback (optional)" value={visit.providerFeedback} onValueChange={(providerFeedback) => setVisit({ ...visit, providerFeedback })}/><Button color="primary" onPress={saveVisit}>Schedule / save visit</Button>
+              <div className="space-y-2"><h4 className="text-sm font-semibold">Visit history</h4>{visits.length === 0 ? <p className="text-sm text-text-secondary">No visits recorded yet.</p> : visits.map((item) => <div key={String(item.id)} className="rounded-button bg-surface-muted p-3 text-sm"><p className="font-medium">{String(item.status ?? "scheduled")} · {String(item.proposed_date ?? "No date")}</p><p className="text-text-secondary">{String(item.observations ?? "No observations")}</p></div>)}</div>
+            </section>
+
+            <section className="space-y-4">
+              <div><h3 className="text-sm font-semibold uppercase tracking-wide text-text-secondary">Meetings</h3><p className="mt-1 text-sm text-text-secondary">Record monthly progress meeting attendance and notes.</p></div>
+              <div className="grid gap-4 sm:grid-cols-2"><Input label="Meeting date" type="date" value={meeting.date} onValueChange={(date) => setMeeting({ ...meeting, date })}/><Select label="Meeting type" selectedKeys={[meeting.type]} onSelectionChange={(keys) => setMeeting({ ...meeting, type: String(Array.from(keys)[0]) })}><SelectItem key="Monthly progress">Monthly progress</SelectItem><SelectItem key="Review meeting">Review meeting</SelectItem></Select></div>
+              <Textarea label="Notes" value={meeting.notes} onValueChange={(notes) => setMeeting({ ...meeting, notes })}/><Button color="primary" variant="flat" onPress={saveMeeting}>Save meeting attendance</Button>
+              <div className="space-y-2"><h4 className="text-sm font-semibold">Meeting history</h4>{meetings.length === 0 ? <p className="text-sm text-text-secondary">No meetings recorded yet.</p> : meetings.map((item) => <div key={String(item.id)} className="rounded-button bg-surface-muted p-3 text-sm"><p className="font-medium">{String(item.meeting_type ?? "Meeting")} · {String(item.meeting_date)}</p><p className="text-text-secondary">{item.attended ? "Attended" : "Absent"}{item.notes ? ` · ${String(item.notes)}` : ""}</p></div>)}</div>
+            </section>
+
+            <section>
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-secondary">Conduct & Support Submissions</h3>
+              {conductRecords.length === 0 ? <p className="text-sm text-text-secondary">No leave, absence, placement-change, or issue submissions.</p> : <div className="space-y-2">{conductRecords.map((item) => <div key={`${item.kind}-${String(item.id)}`} className="flex flex-wrap items-center justify-between gap-3 rounded-button border border-border/60 bg-surface-muted p-3"><div><p className="text-sm font-medium text-text-primary">{item.kind}</p><p className="mt-1 text-xs text-text-secondary">{String(item.reason ?? item.description ?? item.absence_dates ?? "Submitted by student")}</p></div><span className="text-xs font-semibold capitalize text-text-secondary">{String(item.status ?? "pending").replaceAll("_", " ")}</span></div>)}</div>}
+            </section>
+
+            <section>
+              <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-secondary">Training Submissions</h3>
+              <div className="space-y-3">
+                <SubmissionRow label="Placement confirmation" item={placementConfirmations[0]} />
+                <SubmissionRow label="Commencement confirmation" item={commencementConfirmations[0]} />
+                <div className="rounded-button border border-border/60 bg-surface-muted p-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div><p className="text-sm font-medium text-text-primary">Weekly certification documents</p><p className="mt-1 text-xs text-text-secondary">{weeklyCertifications.length} submitted</p></div>
+                    <span className="text-xs font-semibold text-text-secondary">{weeklyCertifications.filter((item) => item.status === "certified").length} certified</span>
+                  </div>
+                  {weeklyCertifications.length > 0 && <div className="mt-2 space-y-1">{weeklyCertifications.map((item) => <div key={String(item.id)} className="flex items-center justify-between gap-2 text-xs text-text-secondary"><span>{String(item.week_start_date)} to {String(item.week_end_date)} · {String(item.status ?? "submitted").replaceAll("_", " ")}</span>{Boolean(item.file_url) && <Button size="sm" variant="light" startContent={<FileText size={13} />} onPress={() => window.open(String(item.file_url), "_blank")}>View PDF</Button>}</div>)}</div>}
+                </div>
+              </div>
+            </section>
+
             <section>
               <h3 className="mb-3 text-sm font-semibold uppercase tracking-wide text-text-secondary">
                 Internship Details
@@ -282,6 +413,10 @@ export default function SupervisorStudentsPage() {
       </AppModal>
     </div>
   );
+}
+
+function SubmissionRow({ label, item }: { label: string; item?: Record<string, unknown> }) {
+  return <div className="flex flex-wrap items-center justify-between gap-3 rounded-button border border-border/60 bg-surface-muted p-3"><div><p className="text-sm font-medium text-text-primary">{label}</p><p className="mt-1 text-xs text-text-secondary">{item ? `Status: ${String(item.status ?? "submitted").replaceAll("_", " ")}` : "Not submitted"}</p></div>{Boolean(item?.file_url) && <Button size="sm" variant="bordered" startContent={<FileText size={14} />} onPress={() => window.open(String(item?.file_url), "_blank")}>View PDF</Button>}</div>;
 }
 
 function ProfileField({ label, value }: { label: string; value: string }) {

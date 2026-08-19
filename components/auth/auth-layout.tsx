@@ -1,7 +1,7 @@
 "use client";
 
+import { BrandMark } from "@/components/ui/brand-mark";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
-import { GraduationCap } from "lucide-react";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -15,11 +15,11 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
       <div className="relative hidden w-1/2 flex-col justify-between bg-gradient-to-br from-brand-500 via-brand-600 to-brand-900 p-12 text-white lg:flex">
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-button bg-white/20 backdrop-blur">
-            <GraduationCap size={24} />
+            <BrandMark className="h-6 w-6 text-white" />
           </div>
           <div>
             <p className="text-lg font-bold">IITS</p>
-            <p className="text-sm text-white/70">Intern & Industrial Training</p>
+            <p className="text-sm text-white/70">Wayamba University of Sri Lanka</p>
           </div>
         </div>
 
@@ -35,7 +35,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           </p>
         </div>
 
-        <p className="text-sm text-white/50">© 2025 Intern & Industrial Training System</p>
+        <p className="text-sm text-white/50">© 2026 Intern & Industrial Training System</p>
       </div>
 
       <div className="flex w-full flex-col lg:w-1/2">
@@ -46,7 +46,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           <div className="w-full max-w-md animate-slide-up">
             <div className="mb-8 flex items-center gap-3 lg:hidden">
               <div className="flex h-10 w-10 items-center justify-center rounded-button bg-primary text-white shadow-card">
-                <GraduationCap size={20} />
+                <BrandMark className="h-5 w-5 text-white" />
               </div>
               <span className="text-lg font-bold text-text-primary">IITS</span>
             </div>

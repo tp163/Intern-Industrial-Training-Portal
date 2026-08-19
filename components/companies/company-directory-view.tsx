@@ -3,7 +3,7 @@
 import { useAppStore } from "@/lib/store/app-store";
 import { SearchBar } from "@/components/ui/search-bar";
 import { Building2, Globe, Mail, MapPin, Phone } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 interface CompanyDirectoryViewProps {
   title?: string;
@@ -16,9 +16,13 @@ export function CompanyDirectoryView({
   description = "Browse partner companies and internship opportunities",
   readOnly = true,
 }: CompanyDirectoryViewProps) {
-  const { getApprovedCompanies } = useAppStore();
+  const { getApprovedCompanies, loadRealData } = useAppStore();
   const [search, setSearch] = useState("");
   const companies = getApprovedCompanies();
+
+  useEffect(() => {
+    void loadRealData();
+  }, [loadRealData]);
 
   const filtered = useMemo(() => {
     if (!search) return companies;
@@ -27,8 +31,7 @@ export function CompanyDirectoryView({
       (c) =>
         c.name.toLowerCase().includes(q) ||
         c.industry.toLowerCase().includes(q) ||
-        c.location.toLowerCase().includes(q) ||
-        (c.companyLetter?.toLowerCase().includes(q) ?? false)
+        c.location.toLowerCase().includes(q)
     );
   }, [companies, search]);
 
@@ -70,35 +73,57 @@ export function CompanyDirectoryView({
                 <div className="min-w-0 flex-1">
                   <h2 className="text-base font-semibold text-text-primary">{company.name}</h2>
                   <p className="text-sm text-text-secondary">{company.industry}</p>
-                  {company.companyLetter && (
-                    <p className="mt-1 font-mono text-xs font-medium text-primary">
-                      {company.companyLetter}
-                    </p>
-                  )}
                 </div>
               </div>
               <p className="mt-4 line-clamp-3 flex-1 text-sm leading-relaxed text-text-secondary">
                 {company.description}
               </p>
               <ul className="mt-4 space-y-2 text-sm text-text-secondary">
-                <li className="flex items-center gap-2">
+                <li className="flex items-start gap-2">
                   <MapPin size={14} className="shrink-0 text-primary" />
-                  {company.location}
+                  <span>
+                    <span className="mr-1 font-medium text-text-primary">Address:</span>
+                    {company.location || "Not provided"}
+                  </span>
                 </li>
-                <li className="flex items-center gap-2 break-all">
+                <li className="flex items-start gap-2 break-all">
                   <Mail size={14} className="shrink-0 text-primary" />
-                  {company.email}
+                  <span>
+                    <span className="mr-1 font-medium text-text-primary">Email:</span>
+                    {company.email ? (
+                      <a className="text-primary hover:underline" href={`mailto:${company.email}`}>
+                        {company.email}
+                      </a>
+                    ) : (
+                      "Not provided"
+                    )}
+                  </span>
                 </li>
-                <li className="flex items-center gap-2">
+                <li className="flex items-start gap-2">
                   <Phone size={14} className="shrink-0 text-primary" />
-                  {company.phone}
+                  <span>
+                    <span className="mr-1 font-medium text-text-primary">Phone:</span>
+                    {company.phone || "Not provided"}
+                  </span>
                 </li>
-                {company.website && (
-                  <li className="flex items-center gap-2 break-all">
-                    <Globe size={14} className="shrink-0 text-primary" />
-                    {company.website.replace(/^https?:\/\//, "")}
-                  </li>
-                )}
+                <li className="flex items-start gap-2 break-all">
+                  <Globe size={14} className="shrink-0 text-primary" />
+                  <span>
+                    <span className="mr-1 font-medium text-text-primary">Website:</span>
+                    {company.website ? (
+                      <a
+                        className="text-primary hover:underline"
+                        href={company.website.startsWith("http") ? company.website : `https://${company.website}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {company.website.replace(/^https?:\/\//, "")}
+                      </a>
+                    ) : (
+                      "Not provided"
+                    )}
+                  </span>
+                </li>
               </ul>
             </article>
           ))}

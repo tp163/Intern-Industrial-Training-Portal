@@ -1,0 +1,18 @@
+export const degreePrograms = [
+  "B.Sc. (Hons) in Applied Electronics",
+  "B.Sc. (Hons) in Mathematics with Statistics",
+  "B.Sc. (Hons) in Industrial Management",
+  "B.Sc. (Hons) in Computer Science",
+  "B.Sc. (Joint Major) in Mathematics, Mathematical Modelling and Statistics with Computing and Information Systems",
+  "B.Sc. (Joint Major) in Mathematics, Mathematical Modelling and Statistics with Electronics",
+  "B.Sc. (Joint Major) in Mathematics, Mathematical Modelling and Statistics with Industrial Management",
+  "B.Sc. (Joint Major) in Computing and Information Systems with Mathematics, Mathematical Modelling and Statistics",
+  "B.Sc. (Joint Major) in Computing and Information Systems with Electronics",
+  "B.Sc. (Joint Major) in Computing and Information Systems with Industrial Management",
+  "B.Sc. (Joint Major) in Electronics with Mathematics, Mathematical Modelling and Statistics",
+  "B.Sc. (Joint Major) in Electronics with Computing and Information Systems",
+  "B.Sc. (Joint Major) in Electronics with Industrial Management",
+  "B.Sc. (Joint Major) in Industrial Management with Mathematics, Mathematical Modelling and Statistics",
+  "B.Sc. (Joint Major) in Industrial Management with Computing and Information Systems",
+  "B.Sc. (Joint Major) in Industrial Management with Electronics",
+] as const;

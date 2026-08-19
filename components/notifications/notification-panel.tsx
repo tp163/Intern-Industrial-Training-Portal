@@ -1,5 +1,6 @@
 "use client";
 
+import { AppModal } from "@/components/ui/app-modal";
 import { useAppStore } from "@/lib/store/app-store";
 import { cn, formatDate } from "@/lib/utils";
 import type { AppNotification, NotificationAudience } from "@/types";
@@ -12,6 +13,7 @@ import {
   DropdownTrigger,
 } from "@heroui/react";
 import { Bell, CheckCheck } from "lucide-react";
+import { useState } from "react";
 
 const categoryLabels: Record<string, string> = {
   report_submitted: "Report",
@@ -38,11 +40,13 @@ export function NotificationPanel({ audience, userId }: NotificationPanelProps) 
     markNotificationRead,
     markAllNotificationsRead,
   } = useAppStore();
+  const [selected, setSelected] = useState<AppNotification | null>(null);
 
   const items = getNotificationsFor(audience, userId);
   const unread = items.filter((n) => !n.read).length;
 
   return (
+    <>
     <Dropdown placement="bottom-end">
       <DropdownTrigger>
         <Button
@@ -84,13 +88,39 @@ export function NotificationPanel({ audience, userId }: NotificationPanelProps) 
             key={n.id}
             textValue={n.title}
             className={cn("px-0", !n.read && "bg-primary/5")}
-            onPress={() => markNotificationRead(n.id)}
+            onPress={() => {
+              markNotificationRead(n.id);
+              setSelected({ ...n, read: true });
+            }}
           >
             <NotificationRow notification={n} />
           </DropdownItem>
         ))}
       </DropdownMenu>
     </Dropdown>
+    <AppModal
+      isOpen={!!selected}
+      onClose={() => setSelected(null)}
+      title={selected?.title ?? "Notification"}
+      footer={<Button variant="light" onPress={() => setSelected(null)}>Close</Button>}
+    >
+      {selected && (
+        <div className="space-y-4">
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full border border-border bg-surface-muted px-2.5 py-1 text-xs font-semibold uppercase text-text-secondary">
+              {categoryLabels[selected.category] ?? selected.category}
+            </span>
+            <span className="text-xs text-text-secondary">
+              {formatDate(selected.createdAt)} - {new Date(selected.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+            </span>
+          </div>
+          <p className="whitespace-pre-wrap text-sm leading-relaxed text-text-primary">
+            {selected.message}
+          </p>
+        </div>
+      )}
+    </AppModal>
+    </>
   );
 }
 

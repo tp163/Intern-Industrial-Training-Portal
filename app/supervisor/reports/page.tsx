@@ -3,19 +3,33 @@
 import { ContentCard, PageHeader } from "@/components/ui/page-header";
 import { SearchBar } from "@/components/ui/search-bar";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { currentSupervisor, progressReports, students } from "@/data/mock";
+import { useAppStore } from "@/lib/store/app-store";
 import { formatDate } from "@/lib/utils";
-import { Chip } from "@heroui/react";
-import { useMemo, useState } from "react";
+import { Button, Chip } from "@heroui/react";
+import { ClipboardCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
 
 export default function SupervisorReportsPage() {
+  const router = useRouter();
+  const { currentUser, loadRealData, logbookReports, students, supervisors } = useAppStore();
   const [search, setSearch] = useState("");
+  const supervisorRecord = useMemo(
+    () =>
+      supervisors.find((supervisor) => supervisor.id === currentUser?.id) ??
+      supervisors.find((supervisor) => supervisor.email === currentUser?.email),
+    [currentUser?.email, currentUser?.id, supervisors]
+  );
+  const supervisorId = supervisorRecord?.id ?? currentUser?.id ?? "";
+
+  useEffect(() => {
+    loadRealData();
+  }, [loadRealData, supervisorId]);
 
   const assignedStudentIds = new Set(
-    students.filter((s) => s.supervisorId === currentSupervisor.id).map((s) => s.id)
+    students.filter((s) => !supervisorId || s.supervisorId === supervisorId).map((s) => s.id)
   );
-
-  const myReports = progressReports.filter((r) => assignedStudentIds.has(r.studentId));
+  const myReports = logbookReports.filter((r) => assignedStudentIds.has(r.studentId));
 
   const filtered = useMemo(() => {
     if (!search) return myReports;
@@ -23,7 +37,7 @@ export default function SupervisorReportsPage() {
     return myReports.filter(
       (r) =>
         r.studentName.toLowerCase().includes(q) ||
-        r.summary.toLowerCase().includes(q)
+        r.excerpt.toLowerCase().includes(q)
     );
   }, [myReports, search]);
 
@@ -31,7 +45,17 @@ export default function SupervisorReportsPage() {
     <div className="space-y-6">
       <PageHeader
         title="Reports"
-        description="Monthly reports submitted by your students"
+        description="Fortnightly reports submitted by your students"
+        action={
+          <Button
+            color="primary"
+            radius="lg"
+            startContent={<ClipboardCheck size={16} />}
+            onPress={() => router.push("/supervisor/reviews")}
+          >
+            Review Reports
+          </Button>
+        }
       />
 
       <div className="mb-2">
@@ -57,25 +81,39 @@ export default function SupervisorReportsPage() {
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{report.studentName}</h3>
                       <Chip size="sm" variant="flat">
-                        Week {report.week}
+                        Report #{report.monthNumber}
                       </Chip>
                     </div>
                     <p className="text-sm text-text-secondary">
                       Submitted {formatDate(report.submittedAt)}
                     </p>
                   </div>
-                  <StatusBadge status={report.status} />
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={report.status} />
+                    {report.status === "pending" && (
+                      <Button
+                        size="sm"
+                        color="primary"
+                        variant="flat"
+                        radius="lg"
+                        startContent={<ClipboardCheck size={14} />}
+                        onPress={() => router.push("/supervisor/reviews")}
+                      >
+                        Review
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
-                <p className="text-sm">{report.summary}</p>
+                <p className="text-sm">{report.excerpt}</p>
 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                   <div>
                     <p className="mb-2 text-xs font-semibold uppercase text-text-secondary">
-                      Achievements
+                      Details
                     </p>
                     <ul className="space-y-1 text-sm">
-                      {report.achievements.map((a, i) => (
+                      {[report.period, report.pdfFileName].filter(Boolean).map((a, i) => (
                         <li key={i} className="flex items-start gap-2">
                           <span className="text-success">✓</span>
                           {a}
@@ -84,17 +122,8 @@ export default function SupervisorReportsPage() {
                     </ul>
                   </div>
                   <div>
-                    <p className="mb-2 text-xs font-semibold uppercase text-text-secondary">
-                      Challenges
-                    </p>
-                    <ul className="space-y-1 text-sm">
-                      {report.challenges.map((c, i) => (
-                        <li key={i} className="flex items-start gap-2">
-                          <span className="text-warning">!</span>
-                          {c}
-                        </li>
-                      ))}
-                    </ul>
+                    <p className="mb-2 text-xs font-semibold uppercase text-text-secondary">Feedback</p>
+                    <p className="text-sm text-text-secondary">{report.feedback || "No feedback yet."}</p>
                   </div>
                 </div>
               </div>

@@ -1,21 +1,29 @@
+"use client";
+
 import { DashboardLayout } from "@/components/layout/dashboard-layout";
-import { currentSupervisor, supervisorConsoleMeta } from "@/data/mock";
+import { useAppStore } from "@/lib/store/app-store";
 import { roleLabels, supervisorNavItems } from "@/lib/navigation";
 
 export default function SupervisorLayout({ children }: { children: React.ReactNode }) {
+  const { currentUser } = useAppStore();
+
+  const name = currentUser?.name ?? "Supervisor";
+  const email = currentUser?.email ?? "";
+  const userId = currentUser?.id ?? "";
+
   return (
     <DashboardLayout
       navItems={supervisorNavItems}
       roleLabel={roleLabels.supervisor}
-      userName={currentSupervisor.name}
-      userEmail={currentSupervisor.email}
+      userName={name}
+      userEmail={email}
       profileHref="/supervisor/settings"
       variant="portal"
       userRoleBadge="Faculty Supervisor"
-      consoleTitle={supervisorConsoleMeta.consoleTitle}
-      consoleVersion={supervisorConsoleMeta.consoleVersion}
+      consoleTitle="Applied Sciences Console"
+      consoleVersion="v1.1"
       notificationAudience="supervisor"
-      notificationUserId={currentSupervisor.id}
+      notificationUserId={userId}
     >
       {children}
     </DashboardLayout>

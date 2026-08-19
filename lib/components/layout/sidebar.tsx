@@ -24,7 +24,7 @@ export function Sidebar({
   roleLabel,
   userName,
   userRoleBadge,
-  portalTitle = "Intern & Training Portal",
+  portalTitle = "Intern & Industrial Training Portal",
   variant = "default",
   collapsed = false,
   onToggle,

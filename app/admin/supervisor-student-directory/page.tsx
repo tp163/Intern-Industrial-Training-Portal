@@ -3,12 +3,12 @@
 import { AppModal } from "@/components/ui/app-modal";
 import { TableScroll } from "@/components/ui/table-scroll";
 import { InternshipStatusPill } from "@/components/supervisor/internship-status-pill";
-import { currentAdmin, supervisors } from "@/data/mock";
 import { useAppStore } from "@/lib/store/app-store";
-import { fetchStudentByStudentId } from "@/lib/mock-api";
+import { apiDeleteUser } from "@/lib/api";
 import { notifyError, notifySuccess } from "@/lib/notify";
-import { formFieldClassNames, getInitials } from "@/lib/utils";
+import { getInitials } from "@/lib/utils";
 import type { Student } from "@/types";
+import { departmentOptions } from "@/lib/departments";
 import {
   Avatar,
   Button,
@@ -23,13 +23,15 @@ import {
   TableHeader,
   TableRow,
 } from "@heroui/react";
-import { ChevronDown, ChevronRight, Eye, Pencil, Plus, Search } from "lucide-react";
+import { ChevronDown, ChevronRight, Eye, Pencil, Search, Trash2 } from "lucide-react";
 import { useMemo, useState } from "react";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 const ALL = "all";
 
 export default function AdminSupervisorStudentDirectoryPage() {
-  const { students, allocateStudents, updateStudentRecord, addStudent } = useAppStore();
+  const { currentUser, students, supervisors, removeStudent, updateStudentRecord } = useAppStore();
   const [search, setSearch] = useState("");
   const [department, setDepartment] = useState(ALL);
   const [batch, setBatch] = useState(ALL);
@@ -38,20 +40,15 @@ export default function AdminSupervisorStudentDirectoryPage() {
     () => new Set(supervisors.map((s) => s.id))
   );
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
-  const [editMode, setEditMode] = useState(false);
-  const [editForm, setEditForm] = useState<Partial<Student>>({});
-  const [showAddStudent, setShowAddStudent] = useState(false);
-  const [lookupId, setLookupId] = useState("");
-  const [lookupLoading, setLookupLoading] = useState(false);
-  const [lookupError, setLookupError] = useState("");
-  const [addForm, setAddForm] = useState<Partial<Student>>({});
-  const [saving, setSaving] = useState(false);
+  const [confirmDeleteStudentId, setConfirmDeleteStudentId] = useState<string | null>(null);
+  const [editingStudent, setEditingStudent] = useState(false);
+  const [studentForm, setStudentForm] = useState({ name: "", email: "", phone: "", departmentCode: "", batch: "", program: "", year: "", gpa: "" });
 
-  const canEdit = currentAdmin.permissions.includes("all");
+  const canDelete = currentUser?.role === "admin";
 
   const departments = useMemo(
-    () => [ALL, ...Array.from(new Set(students.map((s) => s.departmentCode).filter(Boolean)))],
-    [students]
+    () => [ALL, ...departmentOptions],
+    []
   );
   const batches = useMemo(
     () => [ALL, ...Array.from(new Set(students.map((s) => s.batch).filter(Boolean)))],
@@ -116,90 +113,9 @@ export default function AdminSupervisorStudentDirectoryPage() {
     });
   };
 
-  const openStudent = (student: Student, editing: boolean) => {
-    setSelectedStudent(student);
-    setEditMode(editing);
-    setEditForm({ ...student });
-  };
-
-  const closeModal = () => {
-    setSelectedStudent(null);
-    setEditMode(false);
-    setEditForm({});
-  };
-
-  const handleLookupStudent = async () => {
-    setLookupError("");
-    if (!lookupId.trim()) {
-      setLookupError("Enter a Student ID to search.");
-      return;
-    }
-    setLookupLoading(true);
-    try {
-      const found = await fetchStudentByStudentId(lookupId);
-      if (!found) {
-        setLookupError("Invalid Student ID. No matching record found.");
-        setAddForm({});
-        notifyError("Invalid Student ID. Please check and try again.");
-        return;
-      }
-      const alreadyListed = students.some(
-        (s) => s.studentId.toUpperCase() === found.studentId.toUpperCase()
-      );
-      if (alreadyListed) {
-        setLookupError("This student is already in the directory.");
-        setAddForm({});
-        notifyError("Student is already listed in the directory.");
-        return;
-      }
-      setAddForm({ ...found });
-      notifySuccess("Student details loaded successfully.");
-    } finally {
-      setLookupLoading(false);
-    }
-  };
-
-  const handleAddToDirectory = () => {
-    if (!addForm.studentId || !addForm.name) {
-      notifyError("Fetch student details before adding to the directory.");
-      return;
-    }
-    const entry: Student = {
-      ...(addForm as Student),
-      id: addForm.id?.startsWith("reg-") ? `stu-${Date.now()}` : (addForm.id ?? `stu-${Date.now()}`),
-      role: "student",
-      allocationStatus: "unassigned",
-    };
-    addStudent(entry);
-    notifySuccess(`${entry.name} added. Assign a supervisor via Student Allocation.`);
-    resetAddStudent();
-  };
-
-  const handleSaveEdit = () => {
-    if (!selectedStudent) return;
-    setSaving(true);
-    setTimeout(() => {
-      const prevSupervisor = selectedStudent.supervisorId;
-      const nextSupervisor = editForm.supervisorId;
-      updateStudentRecord(selectedStudent.id, editForm as Partial<Student>, "directory record");
-      if (prevSupervisor !== nextSupervisor) {
-        allocateStudents(
-          [selectedStudent.id],
-          nextSupervisor ?? null
-        );
-      }
-      setSaving(false);
-      notifySuccess("Student updated successfully.");
-      closeModal();
-    }, 600);
-  };
-
-  const resetAddStudent = () => {
-    setShowAddStudent(false);
-    setLookupId("");
-    setLookupError("");
-    setAddForm({});
-  };
+  const closeModal = () => { setSelectedStudent(null); setEditingStudent(false); };
+  const openStudent = (student: Student) => { setSelectedStudent(student); setEditingStudent(false); setStudentForm({ name: student.name, email: student.email, phone: student.phone ?? "", departmentCode: student.departmentCode ?? "", batch: student.batch ?? "", program: student.program ?? "", year: String(student.year ?? ""), gpa: student.gpa == null ? "" : String(student.gpa) }); };
+  const saveStudent = () => { if (!selectedStudent || !studentForm.name.trim() || !studentForm.email.trim()) return notifyError("Student name and email are required."); const patch = { name: studentForm.name.trim(), email: studentForm.email.trim(), phone: studentForm.phone.trim() || undefined, departmentCode: studentForm.departmentCode.trim() || undefined, batch: studentForm.batch.trim() || undefined, program: studentForm.program.trim() || selectedStudent.program, year: studentForm.year ? Number(studentForm.year) : selectedStudent.year, gpa: studentForm.gpa ? Number(studentForm.gpa) : undefined }; updateStudentRecord(selectedStudent.id, patch, "student details"); setSelectedStudent({ ...selectedStudent, ...patch }); setEditingStudent(false); notifySuccess("Student details updated."); };
 
   return (
     <div className="space-y-6">
@@ -221,19 +137,6 @@ export default function AdminSupervisorStudentDirectoryPage() {
             <Chip variant="flat" color="primary">
               {filteredStudents.length} students · {supervisors.length} supervisors
             </Chip>
-            <Button
-              color="primary"
-              radius="lg"
-              startContent={<Plus size={16} />}
-              onPress={() => {
-                setShowAddStudent(true);
-                setLookupId("");
-                setLookupError("");
-                setAddForm({});
-              }}
-            >
-              Add Student
-            </Button>
           </div>
         </div>
       </div>
@@ -372,26 +275,19 @@ export default function AdminSupervisorStudentDirectoryPage() {
                           </TableCell>
                           <TableCell>
                             <div className="flex gap-1">
-                              <Button
-                                isIconOnly
-                                size="sm"
-                                variant="light"
-                                aria-label="View student"
-                                onPress={() => openStudent(student, false)}
-                              >
+                              <Button isIconOnly size="sm" variant="light" aria-label="View student" onPress={() => openStudent(student)}>
                                 <Eye size={16} />
                               </Button>
-                              {canEdit && (
-                                <Button
-                                  isIconOnly
-                                  size="sm"
-                                  variant="light"
-                                  aria-label="Edit student"
-                                  onPress={() => openStudent(student, true)}
-                                >
-                                  <Pencil size={16} />
+                              {canDelete && confirmDeleteStudentId === student.id ? (
+                                <>
+                                  <Button size="sm" color="danger" radius="lg" onPress={async () => { try { await apiDeleteUser(student.id); removeStudent(student.id); setConfirmDeleteStudentId(null); notifySuccess("Student removed."); } catch (err) { notifyError("Failed to remove student: " + (err instanceof Error ? err.message : "Unknown error")); setConfirmDeleteStudentId(null); } }}>Confirm</Button>
+                                  <Button size="sm" variant="flat" radius="lg" onPress={() => setConfirmDeleteStudentId(null)}>Cancel</Button>
+                                </>
+                              ) : canDelete ? (
+                                <Button isIconOnly size="sm" variant="light" color="danger" aria-label="Delete student" onPress={() => setConfirmDeleteStudentId(student.id)}>
+                                  <Trash2 size={16} />
                                 </Button>
-                              )}
+                              ) : null}
                             </div>
                           </TableCell>
                         </TableRow>
@@ -428,26 +324,19 @@ export default function AdminSupervisorStudentDirectoryPage() {
                       <TableCell>{student.batch ?? "—"}</TableCell>
                       <TableCell>
                         <div className="flex gap-1">
-                          <Button
-                            isIconOnly
-                            size="sm"
-                            variant="light"
-                            aria-label="View student"
-                            onPress={() => openStudent(student, false)}
-                          >
+                          <Button isIconOnly size="sm" variant="light" aria-label="View student" onPress={() => openStudent(student)}>
                             <Eye size={16} />
                           </Button>
-                          {canEdit && (
-                            <Button
-                              isIconOnly
-                              size="sm"
-                              variant="light"
-                              aria-label="Edit student"
-                              onPress={() => openStudent(student, true)}
-                            >
-                              <Pencil size={16} />
+                          {canDelete && confirmDeleteStudentId === student.id ? (
+                            <>
+                              <Button size="sm" color="danger" radius="lg" onPress={async () => { try { await apiDeleteUser(student.id); removeStudent(student.id); setConfirmDeleteStudentId(null); notifySuccess("Student removed."); } catch (err) { notifyError("Failed to remove student: " + (err instanceof Error ? err.message : "Unknown error")); setConfirmDeleteStudentId(null); } }}>Confirm</Button>
+                              <Button size="sm" variant="flat" radius="lg" onPress={() => setConfirmDeleteStudentId(null)}>Cancel</Button>
+                            </>
+                          ) : canDelete ? (
+                            <Button isIconOnly size="sm" variant="light" color="danger" aria-label="Delete student" onPress={() => setConfirmDeleteStudentId(student.id)}>
+                              <Trash2 size={16} />
                             </Button>
-                          )}
+                          ) : null}
                         </div>
                       </TableCell>
                     </TableRow>
@@ -460,168 +349,39 @@ export default function AdminSupervisorStudentDirectoryPage() {
       </div>
 
       <AppModal
-        isOpen={showAddStudent}
-        onClose={resetAddStudent}
-        title="Add Student"
-        footer={
-          <>
-            <Button variant="light" onPress={resetAddStudent}>
-              Cancel
-            </Button>
-            <Button
-              color="primary"
-              isDisabled={!addForm.studentId}
-              isLoading={saving}
-              onPress={handleAddToDirectory}
-            >
-              Add to Directory
-            </Button>
-          </>
-        }
-      >
-        <div className="space-y-4">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <Input
-              label="Student ID"
-              placeholder="e.g. ENG-2024-099 (registry demo)"
-              value={lookupId}
-              onValueChange={(v) => {
-                setLookupId(v);
-                setLookupError("");
-              }}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  void handleLookupStudent();
-                }
-              }}
-              variant="bordered"
-              radius="lg"
-              className="flex-1"
-              classNames={formFieldClassNames}
-              isInvalid={!!lookupError}
-              errorMessage={lookupError}
-            />
-            <Button
-              color="primary"
-              radius="lg"
-              isLoading={lookupLoading}
-              onPress={handleLookupStudent}
-            >
-              Fetch Details
-            </Button>
-          </div>
-          {addForm.studentId && (
-            <div className="grid gap-4 rounded-button border border-border/60 bg-surface-muted p-4 sm:grid-cols-2">
-              <Input label="Student Name" value={addForm.name ?? ""} isReadOnly variant="bordered" radius="lg" classNames={formFieldClassNames} />
-              <Input label="Department" value={addForm.departmentCode ?? ""} isReadOnly variant="bordered" radius="lg" classNames={formFieldClassNames} />
-              <Input label="Email" value={addForm.email ?? ""} isReadOnly variant="bordered" radius="lg" classNames={formFieldClassNames} />
-              <Input label="Batch" value={addForm.batch ?? ""} isReadOnly variant="bordered" radius="lg" classNames={formFieldClassNames} />
-              <Input label="Contact" value={addForm.phone ?? ""} isReadOnly variant="bordered" radius="lg" classNames={formFieldClassNames} className="sm:col-span-2" />
-            </div>
-          )}
-        </div>
-      </AppModal>
-
-      <AppModal
         isOpen={!!selectedStudent}
         onClose={closeModal}
-        title={editMode ? "Edit Student" : "Student Details"}
-        footer={
-          editMode ? (
-            <>
-              <Button variant="light" onPress={closeModal}>
-                Cancel
-              </Button>
-              <Button color="primary" isLoading={saving} onPress={handleSaveEdit}>
-                Save Changes
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button variant="light" onPress={closeModal}>
-                Close
-              </Button>
-              {canEdit && selectedStudent && (
-                <Button color="primary" onPress={() => setEditMode(true)}>
-                  Edit
-                </Button>
-              )}
-            </>
-          )
-        }
+        title={editingStudent ? "Edit Student" : "Student Details"}
+        footer={editingStudent ? <><Button variant="light" onPress={() => setEditingStudent(false)}>Cancel</Button><Button color="primary" onPress={saveStudent}>Save changes</Button></> : <><Button variant="light" onPress={closeModal}>Close</Button>{canDelete && <Button color="primary" variant="flat" startContent={<Pencil size={15} />} onPress={() => setEditingStudent(true)}>Edit details</Button>}</>}
       >
         {selectedStudent && (
-          <div className="grid gap-4 sm:grid-cols-2">
-            {editMode ? (
-              <>
-                <Input
-                  label="Full Name"
-                  value={editForm.name ?? ""}
-                  onValueChange={(v) => setEditForm((f) => ({ ...f, name: v }))}
-                  variant="bordered"
-                  radius="lg"
-                  classNames={formFieldClassNames}
-                />
-                <Input
-                  label="Student ID"
-                  value={editForm.studentId ?? ""}
-                  onValueChange={(v) => setEditForm((f) => ({ ...f, studentId: v }))}
-                  variant="bordered"
-                  radius="lg"
-                  classNames={formFieldClassNames}
-                />
-                <Input
-                  label="Department"
-                  value={editForm.departmentCode ?? ""}
-                  onValueChange={(v) => setEditForm((f) => ({ ...f, departmentCode: v }))}
-                  variant="bordered"
-                  radius="lg"
-                  classNames={formFieldClassNames}
-                />
-                <Input
-                  label="Batch"
-                  value={editForm.batch ?? ""}
-                  onValueChange={(v) => setEditForm((f) => ({ ...f, batch: v }))}
-                  variant="bordered"
-                  radius="lg"
-                  classNames={formFieldClassNames}
-                />
-                <Select
-                  label="Supervisor"
-                  selectedKeys={editForm.supervisorId ? [editForm.supervisorId] : []}
-                  onSelectionChange={(keys) => {
-                    const val = Array.from(keys)[0] as string;
-                    setEditForm((f) => ({ ...f, supervisorId: val }));
-                  }}
-                  variant="bordered"
-                  radius="lg"
-                  className="sm:col-span-2"
+          editingStudent ? <div className="grid gap-4 sm:grid-cols-2">{([['name','Name','text'],['email','Email','email'],['phone','Phone','text'],['departmentCode','Department','text'],['batch','Batch','text'],['program','Program','text'],['year','Year','number'],['gpa','GPA','number']] as const).map(([key,label,type]) => <Input key={key} label={label} type={type} value={studentForm[key]} onValueChange={(value) => setStudentForm((current) => ({ ...current, [key]: value }))} />)}</div> : <div className="grid gap-4 sm:grid-cols-2">
+            <DetailField label="Name" value={selectedStudent.name} />
+            <DetailField label="Student ID" value={selectedStudent.studentId} />
+            <DetailField label="Email" value={selectedStudent.email} />
+            <DetailField label="Department" value={selectedStudent.departmentCode ?? "—"} />
+            <DetailField label="Batch" value={selectedStudent.batch ?? "—"} />
+            <DetailField label="Program" value={selectedStudent.program} />
+            <DetailField
+              label="Supervisor"
+              value={selectedStudent.supervisorId ? supervisorMap[selectedStudent.supervisorId] ?? "—" : "Unassigned"}
+            />
+            <DetailField label="GPA" value={selectedStudent.gpa?.toString() ?? "—"} />
+            <div className="sm:col-span-2">
+              <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">CV</p>
+              {selectedStudent.cvUrl ? (
+                <Button
+                  className="mt-2"
+                  color="primary"
+                  variant="flat"
+                  onPress={() => window.open(selectedStudent.cvUrl, "_blank")}
                 >
-                  {supervisors.map((s) => (
-                    <SelectItem key={s.id}>{s.name}</SelectItem>
-                  ))}
-                </Select>
-              </>
-            ) : (
-              <>
-                <DetailField label="Name" value={selectedStudent.name} />
-                <DetailField label="Student ID" value={selectedStudent.studentId} />
-                <DetailField label="Email" value={selectedStudent.email} />
-                <DetailField label="Department" value={selectedStudent.departmentCode ?? "—"} />
-                <DetailField label="Batch" value={selectedStudent.batch ?? "—"} />
-                <DetailField label="Program" value={selectedStudent.program} />
-                <DetailField
-                  label="Supervisor"
-                  value={
-                    selectedStudent.supervisorId
-                      ? supervisorMap[selectedStudent.supervisorId] ?? "—"
-                      : "Unassigned"
-                  }
-                />
-                <DetailField label="GPA" value={selectedStudent.gpa?.toString() ?? "—"} />
-              </>
-            )}
+                  View / Download {selectedStudent.cvFileName ?? "CV"}
+                </Button>
+              ) : (
+                <p className="mt-1 text-sm font-medium text-text-primary">No CV uploaded</p>
+              )}
+            </div>
           </div>
         )}
       </AppModal>

@@ -13,10 +13,10 @@ import {
   NavbarItem,
 } from "@heroui/react";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { useAppStore } from "@/lib/store/app-store";
 import { getInitials } from "@/lib/utils";
 import { Bell, LogOut, Menu, Settings, User } from "lucide-react";
 import Link from "next/link";
-import { notifications } from "@/data/mock";
 
 interface NavbarProps {
   userName: string;
@@ -26,6 +26,7 @@ interface NavbarProps {
 }
 
 export function Navbar({ userName, userEmail, onMenuClick, showMenuButton = false }: NavbarProps) {
+  const { notifications } = useAppStore();
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   return (

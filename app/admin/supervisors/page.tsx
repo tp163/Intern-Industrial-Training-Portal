@@ -4,8 +4,11 @@ import { AppModal } from "@/components/ui/app-modal";
 import { ContentCard, EmptyState, PageHeader } from "@/components/ui/page-header";
 import { TableScroll } from "@/components/ui/table-scroll";
 import { SearchBar } from "@/components/ui/search-bar";
-import { supervisors } from "@/data/mock";
-import { formFieldClassNames, getInitials } from "@/lib/utils";
+import { useAppStore } from "@/lib/store/app-store";
+import { apiCreateUser, apiUpdateUser, apiDeleteUser } from "@/lib/api";
+import { digitsOnly, formFieldClassNames, getInitials, isValidEmail, isValidPhone } from "@/lib/utils";
+
+const isValidPassword = (v: string) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{8,}$/.test(v);
 import { notifyError, notifySuccess } from "@/lib/notify";
 import type { Supervisor } from "@/types";
 import {
@@ -19,49 +22,77 @@ import {
   TableHeader,
   TableRow,
 } from "@heroui/react";
-import { Eye, Pencil, Plus, UserCheck } from "lucide-react";
+import { Eye, Pencil, Plus, Trash2, UserCheck } from "lucide-react";
 import { useMemo, useState } from "react";
 
 export default function AdminSupervisorsPage() {
+  const { supervisors, addSupervisor, updateSupervisor, removeSupervisor } = useAppStore();
   const [search, setSearch] = useState("");
-  const [items, setItems] = useState(supervisors);
   const [selected, setSelected] = useState<Supervisor | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [showAdd, setShowAdd] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [form, setForm] = useState({
     name: "",
     email: "",
     title: "",
     department: "",
     phone: "",
+    password: "",
   });
 
   const filtered = useMemo(() => {
-    if (!search) return items;
+    if (!search) return supervisors;
     const q = search.toLowerCase();
-    return items.filter(
+    return supervisors.filter(
       (s) =>
         s.name.toLowerCase().includes(q) ||
         s.email.toLowerCase().includes(q) ||
         s.department?.toLowerCase().includes(q)
     );
-  }, [items, search]);
+  }, [supervisors, search]);
 
   const openAdd = () => {
-    setForm({ name: "", email: "", title: "", department: "", phone: "" });
+    setForm({ name: "", email: "", title: "", department: "", phone: "", password: "" });
     setShowAdd(true);
   };
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name.trim() || !form.email.trim()) {
       notifyError("Name and email are required.");
       return;
     }
+    if (!isValidEmail(form.email)) {
+      notifyError("Please enter a valid email address with @ sign.");
+      return;
+    }
+    if (!form.password) {
+      notifyError("A temporary password is required so the supervisor can log in.");
+      return;
+    }
+    if (!isValidPassword(form.password)) {
+      notifyError("Password must be at least 8 characters and include uppercase, lowercase, and a number.");
+      return;
+    }
+    if (form.phone && !isValidPhone(form.phone)) {
+      notifyError("Phone number must be exactly 10 numbers.");
+      return;
+    }
     setSaving(true);
-    setTimeout(() => {
+    try {
+      const result = await apiCreateUser({
+        name: form.name,
+        email: form.email,
+        role: "supervisor",
+        title: form.title || null,
+        department: form.department || null,
+        phone: form.phone || null,
+        password: form.password,
+      });
+      const dbId = (result.data as Record<string, unknown>)?.id as string ?? `sup-${Date.now()}`;
       const newSup: Supervisor = {
-        id: `sup-${Date.now()}`,
+        id: dbId,
         name: form.name,
         email: form.email,
         role: "supervisor",
@@ -71,11 +102,14 @@ export default function AdminSupervisorsPage() {
         assignedStudents: 0,
         createdAt: new Date().toISOString().slice(0, 10),
       };
-      setItems((prev) => [...prev, newSup]);
-      setSaving(false);
+      addSupervisor(newSup);
       setShowAdd(false);
       notifySuccess("Supervisor added successfully.");
-    }, 700);
+    } catch (err: unknown) {
+      notifyError("Failed to add supervisor: " + (err instanceof Error ? err.message : "Unknown error"));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const closeDetail = () => {
@@ -83,11 +117,51 @@ export default function AdminSupervisorsPage() {
     setEditMode(false);
   };
 
+  const handleSaveEdit = async () => {
+    if (!selected) return;
+    if (!isValidEmail(form.email)) {
+      notifyError("Please enter a valid email address with @ sign.");
+      return;
+    }
+    if (form.phone && !isValidPhone(form.phone)) {
+      notifyError("Phone number must be exactly 10 numbers.");
+      return;
+    }
+    setSaving(true);
+    try {
+      await apiUpdateUser(selected.id, {
+        name: form.name,
+        email: form.email,
+        title: form.title || null,
+        department: form.department || null,
+        phone: form.phone || null,
+      });
+      updateSupervisor(selected.id, { ...form });
+      notifySuccess("Supervisor updated.");
+      closeDetail();
+    } catch (err) {
+      notifyError("Failed to update supervisor: " + (err instanceof Error ? err.message : "Unknown error"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    try {
+      await apiDeleteUser(id);
+      removeSupervisor(id);
+      setConfirmDeleteId(null);
+      notifySuccess("Supervisor removed.");
+    } catch (err) {
+      notifyError("Failed to remove supervisor: " + (err instanceof Error ? err.message : "Unknown error"));
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PageHeader
         title="Supervisor Management"
-        description={`${items.length} supervisors in the system`}
+        description={`${supervisors.length} supervisors in the system`}
         action={
           <Button color="primary" radius="lg" startContent={<Plus size={16} />} onPress={openAdd}>
             Add Supervisor
@@ -134,22 +208,13 @@ export default function AdminSupervisorsPage() {
                 <TableCell>
                   <div className="flex gap-1">
                     <Button
-                      isIconOnly
-                      size="sm"
-                      variant="light"
-                      aria-label="View"
-                      onPress={() => {
-                        setSelected(supervisor);
-                        setEditMode(false);
-                      }}
+                      isIconOnly size="sm" variant="light" aria-label="View"
+                      onPress={() => { setSelected(supervisor); setEditMode(false); }}
                     >
                       <Eye size={16} />
                     </Button>
                     <Button
-                      isIconOnly
-                      size="sm"
-                      variant="light"
-                      aria-label="Edit"
+                      isIconOnly size="sm" variant="light" aria-label="Edit"
                       onPress={() => {
                         setSelected(supervisor);
                         setForm({
@@ -158,12 +223,30 @@ export default function AdminSupervisorsPage() {
                           title: supervisor.title,
                           department: supervisor.department ?? "",
                           phone: supervisor.phone ?? "",
+                          password: "",
                         });
                         setEditMode(true);
                       }}
                     >
                       <Pencil size={16} />
                     </Button>
+                    {confirmDeleteId === supervisor.id ? (
+                      <>
+                        <Button size="sm" color="danger" radius="lg" onPress={() => handleDelete(supervisor.id)}>
+                          Confirm
+                        </Button>
+                        <Button size="sm" variant="flat" radius="lg" onPress={() => setConfirmDeleteId(null)}>
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <Button
+                        isIconOnly size="sm" variant="light" color="danger" aria-label="Delete"
+                        onPress={() => setConfirmDeleteId(supervisor.id)}
+                      >
+                        <Trash2 size={16} />
+                      </Button>
+                    )}
                   </div>
                 </TableCell>
               </TableRow>
@@ -180,21 +263,18 @@ export default function AdminSupervisorsPage() {
         title="Add Supervisor"
         footer={
           <>
-            <Button variant="light" onPress={() => setShowAdd(false)}>
-              Cancel
-            </Button>
-            <Button color="primary" isLoading={saving} onPress={handleAdd}>
-              Create Supervisor
-            </Button>
+            <Button variant="light" onPress={() => setShowAdd(false)}>Cancel</Button>
+            <Button color="primary" isLoading={saving} onPress={handleAdd}>Create Supervisor</Button>
           </>
         }
       >
         <div className="grid gap-4 sm:grid-cols-2">
           <Input label="Full Name" value={form.name} onValueChange={(v) => setForm((f) => ({ ...f, name: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
-          <Input label="Email" value={form.email} onValueChange={(v) => setForm((f) => ({ ...f, email: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
+          <Input label="Email" type="email" value={form.email} onValueChange={(v) => setForm((f) => ({ ...f, email: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} isInvalid={!!form.email && !isValidEmail(form.email)} errorMessage="Email must include @ sign." />
           <Input label="Title" value={form.title} onValueChange={(v) => setForm((f) => ({ ...f, title: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
           <Input label="Department" value={form.department} onValueChange={(v) => setForm((f) => ({ ...f, department: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
-          <Input label="Phone" value={form.phone} onValueChange={(v) => setForm((f) => ({ ...f, phone: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} className="sm:col-span-2" />
+          <Input label="Phone" value={form.phone} onValueChange={(v) => setForm((f) => ({ ...f, phone: digitsOnly(v, 10) }))} inputMode="numeric" maxLength={10} variant="bordered" radius="lg" classNames={formFieldClassNames} isInvalid={!!form.phone && !isValidPhone(form.phone)} errorMessage="Phone number must be exactly 10 numbers." />
+          <Input label="Temporary Password" type="password" placeholder="Min 8 chars, upper, lower, number" value={form.password} onValueChange={(v) => setForm((f) => ({ ...f, password: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} isRequired isInvalid={!!form.password && !isValidPassword(form.password)} errorMessage="Min 8 characters, uppercase, lowercase, and number." description="The supervisor will use this to log in for the first time." />
         </div>
       </AppModal>
 
@@ -206,23 +286,7 @@ export default function AdminSupervisorsPage() {
           editMode ? (
             <>
               <Button variant="light" onPress={closeDetail}>Cancel</Button>
-              <Button color="primary" isLoading={saving} onPress={() => {
-                setSaving(true);
-                setTimeout(() => {
-                  if (selected) {
-                    setItems((prev) =>
-                      prev.map((s) =>
-                        s.id === selected.id
-                          ? { ...s, ...form, title: form.title }
-                          : s
-                      )
-                    );
-                  }
-                  setSaving(false);
-                  notifySuccess("Supervisor updated.");
-                  closeDetail();
-                }, 600);
-              }}>Save</Button>
+              <Button color="primary" isLoading={saving} onPress={handleSaveEdit}>Save</Button>
             </>
           ) : (
             <Button variant="light" onPress={closeDetail}>Close</Button>
@@ -234,9 +298,10 @@ export default function AdminSupervisorsPage() {
             {editMode ? (
               <>
                 <Input label="Name" value={form.name} onValueChange={(v) => setForm((f) => ({ ...f, name: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
-                <Input label="Email" value={form.email} onValueChange={(v) => setForm((f) => ({ ...f, email: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
+                <Input label="Email" type="email" value={form.email} onValueChange={(v) => setForm((f) => ({ ...f, email: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} isInvalid={!!form.email && !isValidEmail(form.email)} errorMessage="Email must include @ sign." />
                 <Input label="Title" value={form.title} onValueChange={(v) => setForm((f) => ({ ...f, title: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
                 <Input label="Department" value={form.department} onValueChange={(v) => setForm((f) => ({ ...f, department: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
+                <Input label="Phone" value={form.phone} onValueChange={(v) => setForm((f) => ({ ...f, phone: digitsOnly(v, 10) }))} inputMode="numeric" maxLength={10} variant="bordered" radius="lg" classNames={formFieldClassNames} isInvalid={!!form.phone && !isValidPhone(form.phone)} errorMessage="Phone number must be exactly 10 numbers." />
               </>
             ) : (
               <>

@@ -2,56 +2,70 @@
 
 import { PortalPageHeader } from "@/components/student/portal-page-header";
 import { ContentCard } from "@/components/ui/page-header";
-import { currentStudent } from "@/data/mock";
 import { useAppStore } from "@/lib/store/app-store";
-import { notifySuccess } from "@/lib/notify";
-import { formatDate } from "@/lib/utils";
+import { apiUploadFile } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
+import { formatDate, MAX_CV_BYTES } from "@/lib/utils";
 import { Button, Chip } from "@heroui/react";
 import { CheckCircle, Download, FileText, Trash2, Upload } from "lucide-react";
 import { getInitialCvFileName, setStoredCvFileName } from "@/lib/cv-storage";
 import { useEffect, useRef, useState } from "react";
 
 export default function StudentCvPage() {
-  const { updateStudentRecord } = useAppStore();
+  const { currentUser, getStudentById, updateStudentRecord } = useAppStore();
+  const userId = currentUser?.id ?? "";
+  const student = getStudentById(userId);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState<string | null>(null);
 
   useEffect(() => {
     setFileName(
-      getInitialCvFileName(currentStudent.cvUrl ? "alex-morgan-cv.pdf" : null)
+      getInitialCvFileName(student?.cvFileName ?? (student?.cvUrl ? "cv.pdf" : null))
     );
-  }, []);
+  }, [student?.cvFileName, student?.cvUrl]);
   const [uploading, setUploading] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState("2025-04-10");
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > MAX_CV_BYTES) {
+      notifyError("CV must be 5MB or smaller.");
+      e.target.value = "";
+      return;
+    }
     setUploading(true);
-    setTimeout(() => {
+    try {
+      const uploaded = await apiUploadFile(file);
       setFileName(file.name);
       setStoredCvFileName(file.name);
       setLastUpdated(new Date().toISOString().slice(0, 10));
       updateStudentRecord(
-        currentStudent.id,
-        { cvFileName: file.name, cvUrl: `/uploads/${file.name}` },
+        userId,
+        { cvFileName: file.name, cvUrl: uploaded.url },
         "CV document"
       );
-      setUploading(false);
       notifySuccess("CV uploaded successfully. Administrator has been notified.");
-    }, 900);
+    } catch (err) {
+      notifyError("Failed to upload CV: " + (err instanceof Error ? err.message : "Unknown error"));
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleRemove = () => {
     setFileName(null);
     setStoredCvFileName(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
-    updateStudentRecord(currentStudent.id, { cvFileName: undefined, cvUrl: undefined }, "CV removal");
+    updateStudentRecord(userId, { cvFileName: undefined, cvUrl: undefined }, "CV removal");
     notifySuccess("CV removed. Administrator has been notified.");
   };
 
   const handleDownload = () => {
-    notifySuccess("CV download started.");
+    if (student?.cvUrl) {
+      window.open(student.cvUrl, "_blank");
+      notifySuccess("CV opened for download.");
+    }
   };
 
   return (
@@ -102,7 +116,7 @@ export default function StudentCvPage() {
                 <div>
                   <p className="font-medium text-text-primary">{fileName}</p>
                   <p className="text-sm text-text-secondary">
-                    Last updated: {formatDate(lastUpdated)}
+                    {lastUpdated ? `Last updated: ${formatDate(lastUpdated)}` : "Previously uploaded"}
                   </p>
                 </div>
               </div>
@@ -125,6 +139,7 @@ export default function StudentCvPage() {
                 radius="lg"
                 startContent={<Download size={16} />}
                 onPress={handleDownload}
+                isDisabled={!student?.cvUrl}
               >
                 Download CV
               </Button>

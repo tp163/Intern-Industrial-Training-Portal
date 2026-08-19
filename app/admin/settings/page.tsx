@@ -1,114 +1,178 @@
 "use client";
 
 import { ContentCard, PageHeader } from "@/components/ui/page-header";
-import { adminSettings } from "@/lib/settings";
-import { notifySuccess } from "@/lib/notify";
-import type { SystemSetting } from "@/types";
+import { apiUpdateUser } from "@/lib/api";
+import { useAppStore } from "@/lib/store/app-store";
+import { notifyError, notifySuccess } from "@/lib/notify";
+import { authFetch } from "@/lib/auth-fetch";
+import { digitsOnly, formFieldClassNames, getInitials, isValidEmail, isValidPhone } from "@/lib/utils";
 import {
+  Avatar,
   Button,
   Input,
-  Select,
-  SelectItem,
-  Switch,
 } from "@heroui/react";
-import { Save } from "lucide-react";
-import { useState } from "react";
+import { Save, User } from "lucide-react";
+import { useEffect, useState } from "react";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 export default function AdminSettingsPage() {
-  const [settings, setSettings] = useState<SystemSetting[]>(adminSettings);
-  const [saving, setSaving] = useState(false);
+  const { adminProfile, currentUser, updateAdminProfile, updateCurrentUser } = useAppStore();
+  const [profileForm, setProfileForm] = useState(adminProfile);
+  const [savingProfile, setSavingProfile] = useState(false);
 
-  const updateSetting = (id: string, value: string | boolean | number) => {
-    setSettings((prev) => prev.map((s) => (s.id === id ? { ...s, value } : s)));
-  };
+  useEffect(() => {
+    setProfileForm({
+      name: currentUser?.name ?? adminProfile.name,
+      email: currentUser?.email ?? adminProfile.email,
+      phone: currentUser?.phone ?? adminProfile.phone,
+      title: currentUser?.title ?? adminProfile.title,
+    });
+  }, [adminProfile, currentUser]);
 
-  const handleSave = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    let cancelled = false;
+    authFetch(`${API_BASE}/users/${currentUser.id}`)
+      .then((response) => response.json())
+      .then((result) => {
+        if (cancelled || !result.success || !result.data) return;
+        const nextProfile = {
+          name: result.data.name ?? currentUser.name ?? adminProfile.name,
+          email: result.data.email ?? currentUser.email ?? adminProfile.email,
+          phone: result.data.phone ?? "",
+          title: result.data.title ?? currentUser.title ?? adminProfile.title,
+        };
+        setProfileForm(nextProfile);
+        updateAdminProfile(nextProfile);
+        updateCurrentUser(nextProfile);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [adminProfile.email, adminProfile.name, adminProfile.title, currentUser?.id]);
+
+  const handleProfileSave = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
-      notifySuccess("Settings saved successfully.");
-    }, 800);
+    setSavingProfile(true);
+    try {
+      if (!isValidEmail(profileForm.email)) throw new Error("Please enter a valid email address with @ sign.");
+      if (profileForm.phone && !isValidPhone(profileForm.phone)) throw new Error("Phone number must be exactly 10 numbers.");
+
+      if (currentUser?.id) {
+        const result = await apiUpdateUser(currentUser.id, {
+          name: profileForm.name,
+          email: profileForm.email,
+          phone: profileForm.phone || null,
+          title: profileForm.title || null,
+        }) as { data?: Record<string, unknown> };
+        const saved = result.data ?? {};
+        const nextProfile = {
+          name: String(saved.name ?? profileForm.name),
+          email: String(saved.email ?? profileForm.email),
+          phone: saved.phone ? String(saved.phone) : "",
+          title: saved.title ? String(saved.title) : profileForm.title,
+        };
+        updateAdminProfile(nextProfile);
+        updateCurrentUser(nextProfile);
+        setProfileForm(nextProfile);
+      } else {
+        updateAdminProfile(profileForm);
+        setProfileForm(profileForm);
+      }
+      notifySuccess("Profile updated successfully.");
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to update profile";
+      notifyError("Failed to update profile: " + message);
+    } finally {
+      setSavingProfile(false);
+    }
   };
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="System Settings"
-        description="Configure platform-wide settings and preferences"
+        title="Settings"
+        description="Manage your profile and platform-wide configuration"
       />
 
-      <form onSubmit={handleSave}>
-        <ContentCard>
-          <div className="space-y-6">
-            {settings.map((setting) => (
-              <div
-                key={setting.id}
-                className="flex flex-col gap-3 border-b border-border pb-6 last:border-0 last:pb-0 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div className="max-w-md">
-                  <p className="font-medium">{setting.label}</p>
-                  <p className="text-sm text-text-secondary">{setting.description}</p>
-                </div>
-
-                <div className="w-full sm:w-64">
-                  {setting.type === "boolean" && (
-                    <Switch
-                      isSelected={setting.value as boolean}
-                      onValueChange={(v) => updateSetting(setting.id, v)}
-                      color="primary"
-                    />
-                  )}
-                  {setting.type === "number" && (
-                    <Input
-                      type="number"
-                      value={String(setting.value)}
-                      onValueChange={(v) => updateSetting(setting.id, Number(v) || 0)}
-                      variant="bordered"
-                      radius="lg"
-                    />
-                  )}
-                  {setting.type === "text" && (
-                    <Input
-                      value={String(setting.value)}
-                      onValueChange={(v) => updateSetting(setting.id, v)}
-                      variant="bordered"
-                      radius="lg"
-                    />
-                  )}
-                  {setting.type === "select" && setting.options && (
-                    <Select
-                      selectedKeys={[String(setting.value)]}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] as string;
-                        if (selected) updateSetting(setting.id, selected);
-                      }}
-                      variant="bordered"
-                      radius="lg"
-                    >
-                      {setting.options.map((opt) => (
-                        <SelectItem key={opt}>{opt}</SelectItem>
-                      ))}
-                    </Select>
-                  )}
-                </div>
-              </div>
-            ))}
+      <ContentCard>
+        <div className="mb-6 flex items-center gap-4">
+          <Avatar
+            name={getInitials(profileForm.name)}
+            size="lg"
+            className="h-16 w-16 text-lg"
+            color="secondary"
+          />
+          <div>
+            <p className="text-lg font-semibold text-text-primary">{profileForm.name}</p>
+            <p className="text-sm text-text-secondary">{profileForm.title}</p>
           </div>
+        </div>
 
-          <div className="mt-8 flex justify-end border-t border-border pt-6">
+        <form onSubmit={handleProfileSave} className="space-y-5">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <Input
+              label="Full Name"
+              value={profileForm.name}
+              onValueChange={(v) => setProfileForm((p) => ({ ...p, name: v }))}
+              variant="bordered"
+              radius="lg"
+              classNames={formFieldClassNames}
+              startContent={<User className="text-text-secondary" size={18} />}
+              isRequired
+            />
+            <Input
+              label="Email"
+              type="email"
+              value={profileForm.email}
+              onValueChange={(v) => setProfileForm((p) => ({ ...p, email: v }))}
+              variant="bordered"
+              radius="lg"
+              classNames={formFieldClassNames}
+              isInvalid={!!profileForm.email && !isValidEmail(profileForm.email)}
+              errorMessage="Email must include @ sign."
+              isRequired
+            />
+            <Input
+              label="Phone"
+              value={profileForm.phone}
+              onValueChange={(v) => setProfileForm((p) => ({ ...p, phone: digitsOnly(v, 10) }))}
+              inputMode="numeric"
+              maxLength={10}
+              placeholder="0770000000"
+              variant="bordered"
+              radius="lg"
+              classNames={formFieldClassNames}
+              isInvalid={!!profileForm.phone && !isValidPhone(profileForm.phone)}
+              errorMessage="Phone number must be exactly 10 numbers."
+            />
+            <Input
+              label="Title / Role"
+              value={profileForm.title}
+              onValueChange={(v) => setProfileForm((p) => ({ ...p, title: v }))}
+              variant="bordered"
+              radius="lg"
+              classNames={formFieldClassNames}
+            />
+          </div>
+          <div className="flex justify-end pt-2">
             <Button
               type="submit"
               color="primary"
               radius="lg"
               startContent={<Save size={18} />}
-              isLoading={saving}
+              isLoading={savingProfile}
             >
-              Save Settings
+              Save Profile
             </Button>
           </div>
-        </ContentCard>
-      </form>
+        </form>
+      </ContentCard>
+
     </div>
   );
 }

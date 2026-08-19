@@ -1,12 +1,17 @@
 "use client";
 
-import { Button } from "@heroui/react";
+import { BrandMark } from "@/components/ui/brand-mark";
 import { DynamicIcon } from "@/components/ui/dynamic-icon";
 import { cn } from "@/lib/utils";
 import type { NavItem } from "@/types";
-import { GraduationCap, PanelLeft, PanelLeftClose } from "lucide-react";
+import { Button } from "@heroui/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { type PointerEvent as ReactPointerEvent, useCallback, useEffect, useState } from "react";
+import { PanelLeft, PanelLeftClose } from "lucide-react";
+
+const MIN_SIDEBAR_WIDTH = 220;
+const MAX_SIDEBAR_WIDTH = 360;
 
 interface SidebarProps {
   items: NavItem[];
@@ -19,7 +24,9 @@ interface SidebarProps {
   variant?: "default" | "portal";
   collapsed?: boolean;
   sidebarCollapsed?: boolean;
+  width?: number;
   onToggle?: () => void;
+  onResize?: (width: number) => void;
   mobile?: boolean;
   onNavigate?: () => void;
 }
@@ -27,38 +34,79 @@ interface SidebarProps {
 export function Sidebar({
   items,
   roleLabel,
-  portalTitle = "Intern & Training Portal",
+  portalTitle = "Intern & Industrial Training Portal",
   consoleTitle,
   consoleVersion,
   variant = "default",
   collapsed = false,
-  sidebarCollapsed = false,
+  width = 260,
   onToggle,
+  onResize,
   mobile = false,
   onNavigate,
 }: SidebarProps) {
   const pathname = usePathname();
   const isPortal = variant === "portal";
   const isCollapsed = mobile ? false : collapsed;
+  const [isResizing, setIsResizing] = useState(false);
+
+  const startResize = useCallback(
+    (event: ReactPointerEvent<HTMLButtonElement>) => {
+      if (mobile || isCollapsed || !onResize) return;
+
+      event.preventDefault();
+      setIsResizing(true);
+    },
+    [isCollapsed, mobile, onResize]
+  );
+
+  useEffect(() => {
+    if (!isResizing || !onResize) return;
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const nextWidth = Math.min(MAX_SIDEBAR_WIDTH, Math.max(MIN_SIDEBAR_WIDTH, event.clientX));
+      onResize(nextWidth);
+    };
+
+    const stopResize = () => setIsResizing(false);
+
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("pointermove", handlePointerMove);
+    window.addEventListener("pointerup", stopResize);
+
+    return () => {
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+      window.removeEventListener("pointermove", handlePointerMove);
+      window.removeEventListener("pointerup", stopResize);
+    };
+  }, [isResizing, onResize]);
 
   return (
     <aside
       className={cn(
-        "fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-border bg-surface-sidebar font-sans transition-all duration-300",
+        "fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-border bg-surface-sidebar font-sans",
+        isResizing ? "transition-none" : "transition-all duration-300",
         mobile ? "flex w-[260px]" : "hidden lg:flex",
-        isCollapsed ? "w-[72px]" : "w-[260px]"
+        isCollapsed && "w-[72px]"
       )}
+      style={!mobile && !isCollapsed ? { width } : undefined}
     >
       <div
         className={cn(
-          "flex items-center border-b border-border/60",
-          isCollapsed ? "justify-center px-2 py-4" : "justify-between gap-2 px-4 py-4"
+          "relative flex h-16 items-center border-b border-border",
+          isCollapsed ? "justify-between px-2 gap-1" : "justify-between gap-2 pl-4 pr-12"
         )}
       >
-        {!isCollapsed && (
+        {isCollapsed ? (
+          <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-button bg-primary/10 text-primary">
+            <BrandMark className="h-4 w-4 text-primary" />
+          </div>
+        ) : (
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-button bg-primary/10 text-primary">
-              <GraduationCap size={20} strokeWidth={1.75} />
+              <BrandMark className="h-5 w-5 text-primary" />
             </div>
             <div className="min-w-0">
               {isPortal && consoleTitle ? (
@@ -82,23 +130,20 @@ export function Sidebar({
           </div>
         )}
 
-        {isCollapsed && (
-          <div className="flex h-9 w-9 items-center justify-center rounded-button bg-primary/10 text-primary">
-            <GraduationCap size={20} strokeWidth={1.75} />
-          </div>
-        )}
-
-        {onToggle && !mobile && (
+        {!mobile && onToggle && (
           <Button
             isIconOnly
             size="sm"
             variant="light"
-            radius="lg"
-            aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            radius="md"
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
             onPress={onToggle}
-            className={cn("shrink-0 text-text-secondary", isCollapsed && "mt-0")}
+            className={cn(
+              "text-text-secondary hover:bg-surface-muted",
+              isCollapsed ? "h-7 w-7 min-w-7 p-0" : "absolute right-3 top-3.5"
+            )}
           >
-            {sidebarCollapsed ? <PanelLeft size={18} /> : <PanelLeftClose size={18} />}
+            {isCollapsed ? <PanelLeft size={14} /> : <PanelLeftClose size={16} />}
           </Button>
         )}
       </div>
@@ -143,6 +188,20 @@ export function Sidebar({
             </button>
           </div>
         </div>
+      )}
+
+      {!mobile && !isCollapsed && onResize && (
+        <button
+          type="button"
+          aria-label="Resize sidebar"
+          onPointerDown={startResize}
+          className={cn(
+            "absolute -right-1 top-0 hidden h-full w-2 cursor-col-resize touch-none lg:block",
+            "after:absolute after:right-1 after:top-0 after:h-full after:w-px after:bg-transparent after:transition-colors",
+            "hover:after:bg-primary/60 focus-visible:outline-none focus-visible:after:bg-primary",
+            isResizing && "after:bg-primary"
+          )}
+        />
       )}
     </aside>
   );

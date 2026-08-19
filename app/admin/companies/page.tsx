@@ -4,16 +4,15 @@ import { AppModal } from "@/components/ui/app-modal";
 import { ContentCard, EmptyState, PageHeader } from "@/components/ui/page-header";
 import { TableScroll } from "@/components/ui/table-scroll";
 import { SearchBar } from "@/components/ui/search-bar";
-import { internships } from "@/data/mock";
 import { useAppStore } from "@/lib/store/app-store";
-import { notifySuccess } from "@/lib/notify";
+import { apiUploadFile } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
+import { authFetch } from "@/lib/auth-fetch";
 import { formatDate, formFieldClassNames } from "@/lib/utils";
 import type { Company } from "@/types";
 import {
   Button,
   Input,
-  Select,
-  SelectItem,
   Table,
   TableBody,
   TableCell,
@@ -21,8 +20,10 @@ import {
   TableHeader,
   TableRow,
 } from "@heroui/react";
-import { Briefcase, Building2, Plus, Trash2 } from "lucide-react";
-import { useMemo, useState } from "react";
+import { Briefcase, Building2, FileText, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
+
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
 
 const emptyForm = {
   name: "",
@@ -31,16 +32,17 @@ const emptyForm = {
   email: "",
   phone: "",
   description: "",
-  companyLetter: "",
-  status: "approved" as Company["status"],
 };
 
 export default function AdminCompaniesPage() {
-  const { companies, addCompany, removeCompany } = useAppStore();
+  const { companies, internships, addCompany, updateCompany, removeCompany, loadRealData } = useAppStore();
   const [search, setSearch] = useState("");
   const [viewCompany, setViewCompany] = useState<Company | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [editingCompany, setEditingCompany] = useState<Company | null>(null);
   const [form, setForm] = useState(emptyForm);
+  const [letterFile, setLetterFile] = useState<File | null>(null);
+  const letterInputRef = useRef<HTMLInputElement>(null);
 
   const filtered = useMemo(() => {
     if (!search) return companies;
@@ -53,11 +55,84 @@ export default function AdminCompaniesPage() {
     );
   }, [companies, search]);
 
-  const handleAdd = () => {
-    addCompany({ ...form, website: undefined, logo: undefined });
-    notifySuccess("Company added. Student and supervisor directories updated.");
+  const [adding, setAdding] = useState(false);
+
+  const handleAdd = async () => {
+    setAdding(true);
+    try {
+      let companyLetterUrl: string | null = null;
+      if (letterFile) {
+        const uploaded = await apiUploadFile(letterFile);
+        companyLetterUrl = uploaded.url;
+      }
+      const payload = {
+        name: form.name,
+        industry: form.industry,
+        location: form.location,
+        email: form.email,
+        phone: form.phone,
+        description: form.description,
+        company_letter: companyLetterUrl ?? editingCompany?.companyLetter ?? null,
+        status: "approved",
+      };
+      const response = await authFetch(
+        editingCompany ? `${API_BASE}/companies/${editingCompany.id}` : `${API_BASE}/companies`,
+        {
+        method: editingCompany ? "PUT" : "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        }
+      );
+      const result = await response.json();
+      if (!response.ok || !result.success) throw new Error(result.message || (editingCompany ? "Failed to update company" : "Failed to add company"));
+      if (editingCompany) {
+        updateCompany(editingCompany.id, {
+          ...form,
+          companyLetter: companyLetterUrl ?? editingCompany.companyLetter,
+        });
+      } else {
+        addCompany({
+          ...form,
+          website: undefined,
+          logo: undefined,
+          companyLetter: companyLetterUrl ?? undefined,
+          status: "approved",
+        });
+      }
+      // Replace the optimistic client id with the database-generated UUID. This
+      // is required when the admin posts an internship immediately afterwards.
+      await loadRealData();
+      notifySuccess(editingCompany ? "Company details updated." : "Company added. Student and supervisor directories updated.");
+      setShowAdd(false);
+      setEditingCompany(null);
+      setForm(emptyForm);
+      setLetterFile(null);
+    } catch (err) {
+      notifyError(err instanceof Error ? err.message : "Failed to add company.");
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  const openEdit = (company: Company) => {
+    setEditingCompany(company);
+    setForm({
+      name: company.name,
+      industry: company.industry,
+      location: company.location,
+      email: company.email,
+      phone: company.phone,
+      description: company.description,
+    });
+    setLetterFile(null);
+    setShowAdd(true);
+  };
+
+  const closeCompanyForm = () => {
     setShowAdd(false);
+    setEditingCompany(null);
     setForm(emptyForm);
+    setLetterFile(null);
   };
 
   const companyInternships = useMemo(() => {
@@ -100,8 +175,6 @@ export default function AdminCompaniesPage() {
             <TableColumn>COMPANY LETTER</TableColumn>
             <TableColumn>INDUSTRY</TableColumn>
             <TableColumn>LOCATION</TableColumn>
-            <TableColumn>REGISTERED</TableColumn>
-            <TableColumn>STATUS</TableColumn>
             <TableColumn>INTERNSHIPS</TableColumn>
             <TableColumn>ACTIONS</TableColumn>
           </TableHeader>
@@ -115,15 +188,33 @@ export default function AdminCompaniesPage() {
                   </div>
                 </TableCell>
                 <TableCell>
-                  <span className="font-mono text-sm font-medium text-primary">
-                    {company.companyLetter ?? "—"}
-                  </span>
+                  {company.companyLetter ? (
+                    <Button
+                      size="sm"
+                      variant="light"
+                      color="primary"
+                      startContent={<FileText size={14} />}
+                      isDisabled={!company.companyLetter.startsWith("http")}
+                      onPress={() => window.open(company.companyLetter, "_blank", "noopener,noreferrer")}
+                    >
+                      View Letter
+                    </Button>
+                  ) : (
+                    <span className="text-sm text-text-secondary">—</span>
+                  )}
                 </TableCell>
                 <TableCell>{company.industry}</TableCell>
                 <TableCell>{company.location}</TableCell>
-                <TableCell>{formatDate(company.createdAt)}</TableCell>
-                <TableCell className="capitalize">{company.status}</TableCell>
                 <TableCell>
+                  <Button
+                    isIconOnly
+                    size="sm"
+                    variant="light"
+                    aria-label="Edit company"
+                    onPress={() => openEdit(company)}
+                  >
+                    <Pencil size={16} />
+                  </Button>
                   <Button
                     size="sm"
                     variant="flat"
@@ -142,9 +233,16 @@ export default function AdminCompaniesPage() {
                     color="danger"
                     variant="light"
                     aria-label="Remove company"
-                    onPress={() => {
-                      removeCompany(company.id);
-                      notifySuccess("Company removed from directory.");
+                    onPress={async () => {
+                      try {
+                        const res = await authFetch(`${API_BASE}/companies/${company.id}`, { method: "DELETE" });
+                        const result = await res.json();
+                        if (!res.ok || !result.success) throw new Error(result.message || "Failed to remove company");
+                        removeCompany(company.id);
+                        notifySuccess("Company removed from directory.");
+                      } catch (err) {
+                        notifyError(err instanceof Error ? err.message : "Failed to remove company.");
+                      }
                     }}
                   >
                     <Trash2 size={16} />
@@ -192,12 +290,12 @@ export default function AdminCompaniesPage() {
 
       <AppModal
         isOpen={showAdd}
-        onClose={() => setShowAdd(false)}
-        title="Add Company"
+        onClose={closeCompanyForm}
+        title={editingCompany ? "Edit Company" : "Add Company"}
         footer={
           <>
-            <Button variant="light" onPress={() => setShowAdd(false)}>Cancel</Button>
-            <Button color="primary" onPress={handleAdd}>Add Company</Button>
+            <Button variant="light" onPress={closeCompanyForm}>Cancel</Button>
+            <Button color="primary" isLoading={adding} onPress={handleAdd}>{editingCompany ? "Save Changes" : "Add Company"}</Button>
           </>
         }
       >
@@ -207,12 +305,37 @@ export default function AdminCompaniesPage() {
           <Input label="Location" value={form.location} onValueChange={(v) => setForm((f) => ({ ...f, location: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
           <Input label="Email" value={form.email} onValueChange={(v) => setForm((f) => ({ ...f, email: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
           <Input label="Phone" value={form.phone} onValueChange={(v) => setForm((f) => ({ ...f, phone: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
-          <Input label="Company Letter" value={form.companyLetter} onValueChange={(v) => setForm((f) => ({ ...f, companyLetter: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} />
-          <Select label="Status" selectedKeys={[form.status]} onSelectionChange={(keys) => { const v = Array.from(keys)[0] as Company["status"]; if (v) setForm((f) => ({ ...f, status: v })); }} variant="bordered" radius="lg">
-            <SelectItem key="approved">Approved</SelectItem>
-            <SelectItem key="pending">Pending</SelectItem>
-            <SelectItem key="rejected">Rejected</SelectItem>
-          </Select>
+          <div>
+            <p className="mb-2 text-sm font-medium text-text-primary">Company Letter (PDF)</p>
+            <input
+              ref={letterInputRef}
+              type="file"
+              accept=".pdf,application/pdf"
+              className="hidden"
+              onChange={(e) => setLetterFile(e.target.files?.[0] ?? null)}
+            />
+            {letterFile ? (
+              <div className="flex items-center justify-between rounded-button border border-border bg-surface-muted p-3">
+                <span className="inline-flex items-center gap-2 text-sm font-medium">
+                  <FileText size={15} className="text-primary" />
+                  {letterFile.name}
+                </span>
+                <Button size="sm" variant="flat" onPress={() => letterInputRef.current?.click()}>
+                  Replace
+                </Button>
+              </div>
+            ) : (
+              <Button
+                variant="bordered"
+                radius="lg"
+                className="w-full border-dashed"
+                startContent={<Upload size={15} />}
+                onPress={() => letterInputRef.current?.click()}
+              >
+                Upload Company Letter PDF
+              </Button>
+            )}
+          </div>
           <Input label="Description" value={form.description} onValueChange={(v) => setForm((f) => ({ ...f, description: v }))} variant="bordered" radius="lg" classNames={formFieldClassNames} className="sm:col-span-2" />
         </div>
       </AppModal>

@@ -1,4 +1,4 @@
-export type UserRole = "student" | "supervisor" | "admin";
+export type UserRole = "student" | "supervisor" | "external_supervisor" | "admin";
 
 export type ApplicationStatus =
   | "pending"
@@ -11,7 +11,7 @@ export type ReviewStatus = "pending" | "approved" | "rejected";
 
 export type InternshipPlacementStatus = "active" | "pending" | "not_placed";
 
-export type DepartmentCategory = "CMIS" | "IMGT" | "Management" | "Electronic";
+export type DepartmentCategory = "CMIS" | "IMGT" | "ELTN" | "MATH & STAT";
 
 /** Logbook report lifecycle */
 export type LogbookReportStatus =
@@ -44,6 +44,7 @@ export interface User {
   role: UserRole;
   avatar?: string;
   phone?: string;
+  faculty?: string;
   department?: string;
   createdAt: string;
 }
@@ -53,6 +54,7 @@ export type AllocationStatus = "allocated" | "unassigned" | "pending";
 export interface Student extends User {
   role: "student";
   studentId: string;
+  title?: string;
   program: string;
   year: number;
   gpa?: number;
@@ -65,6 +67,10 @@ export interface Student extends User {
   internshipStatus?: InternshipPlacementStatus;
   internshipCompany?: string;
   internshipRole?: string;
+  /** How many months the student has completed so far */
+  internshipMonthsCompleted?: number;
+  /** Total internship duration in months */
+  internshipTotalMonths?: number;
 }
 
 export interface Supervisor extends User {
@@ -109,6 +115,7 @@ export interface Internship {
   status: "open" | "closed" | "draft";
   stipend?: string;
   departmentCategory?: DepartmentCategory;
+  departmentCategories?: DepartmentCategory[];
 }
 
 export interface Application {
@@ -121,6 +128,10 @@ export interface Application {
   status: ApplicationStatus;
   appliedAt: string;
   coverLetter?: string;
+  cvUrl?: string;
+  documentUrl?: string;
+  documentFileName?: string;
+  documentPath?: string;
 }
 
 export interface Review {
@@ -129,7 +140,7 @@ export interface Review {
   studentName: string;
   supervisorId: string;
   title: string;
-  type: "weekly" | "midterm" | "final";
+  type: "weekly" | "midterm" | "final" | "daily_log";
   submittedAt: string;
   status: ReviewStatus;
   content: string;
@@ -145,6 +156,7 @@ export interface LogbookReport {
   monthNumber: number;
   period: string;
   monthKey: string;
+  reportType?: "fortnightly" | "monthly";
   submittedAt: string;
   status: LogbookReportStatus;
   excerpt: string;
@@ -207,7 +219,7 @@ export interface AppNotification {
 export type Notification = AppNotification;
 
 export type AnnouncementPriority = "normal" | "important" | "urgent";
-export type AnnouncementTarget = "all_students" | "supervisor_students";
+export type AnnouncementTarget = "all_students" | "supervisor_students" | "single_student" | "specific_students";
 export type AnnouncementAuthorRole = "admin" | "supervisor";
 export type AnnouncementCategory = "workshop" | "general" | "internship" | "deadline" | "reminder";
 
@@ -221,8 +233,12 @@ export interface Announcement {
   priority: AnnouncementPriority;
   target: AnnouncementTarget;
   supervisorId?: string;
+  studentId?: string;
+  studentIds?: string[];
+  isPersonal?: boolean;
   linkUrl?: string;
   attachmentName?: string;
+  attachmentUrl?: string;
   scheduledAt?: string;
   publishedAt?: string;
   createdAt: string;

@@ -1,0 +1,6 @@
+"use client";
+import { apiListTrainingRecords } from "@/lib/api";
+import { Button } from "@heroui/react";
+import { FileText } from "lucide-react";
+import { useEffect, useState } from "react";
+export default function StudentDocumentsPage(){const [items,setItems]=useState<Record<string,unknown>[]>([]);useEffect(()=>{apiListTrainingRecords("training_documents").then(r=>setItems(r.data)).catch(()=>{});},[]);return <div className="space-y-5"><div><h1 className="ds-page-title">Training Documents</h1><p className="ds-page-description">Official forms and appointment letters issued by the university for your training.</p></div>{items.length===0?<p className="rounded-card border border-border bg-white p-6 text-sm text-text-secondary">No documents have been issued yet.</p>:items.map(item=><div key={String(item.id)} className="flex items-center justify-between rounded-card border border-border bg-white p-4"><div><p className="font-semibold">{String(item.title)}</p><p className="text-sm text-text-secondary">{String(item.file_name??"PDF document")}</p></div><Button as="a" href={String(item.file_url)} download variant="flat" startContent={<FileText size={16}/>}>Download PDF</Button></div>)}</div>}

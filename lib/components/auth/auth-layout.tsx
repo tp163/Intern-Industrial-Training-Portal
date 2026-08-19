@@ -19,7 +19,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           </div>
           <div>
             <p className="text-lg font-bold">IITS</p>
-            <p className="text-sm text-white/70">Intern & Industrial Training</p>
+            <p className="text-sm text-white/70">Wayamba University of Sri Lanka</p>
           </div>
         </div>
 
@@ -35,7 +35,7 @@ export function AuthLayout({ children, title, subtitle }: AuthLayoutProps) {
           </p>
         </div>
 
-        <p className="text-sm text-white/50">© 2025 Intern & Industrial Training System</p>
+        <p className="text-sm text-white/50">© 2026 Intern & Industrial Training System</p>
       </div>
 
       <div className="flex w-full flex-col lg:w-1/2">

@@ -5,6 +5,9 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Intern & Industrial Training System",
   description: "Manage internships, applications, and training progress",
+  icons: {
+    icon: "/university-logo.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

@@ -1,9 +1,10 @@
 "use client";
 
+import { BrandMark } from "@/components/ui/brand-mark";
 import { Avatar } from "@heroui/react";
 import { cn, getInitials } from "@/lib/utils";
 import type { NavItem } from "@/types";
-import { GraduationCap, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -37,7 +38,7 @@ export function PortalNavbar({
             <Menu size={22} />
           </button>
           <div className="flex items-center gap-2.5">
-            <GraduationCap size={22} className="shrink-0 text-primary" strokeWidth={1.75} />
+            <BrandMark className="h-6 w-6 shrink-0 text-primary lg:hidden" />
             <span className="hidden font-serif text-base font-bold text-text-primary sm:inline md:text-lg">
               Intern &amp; Training Portal
             </span>

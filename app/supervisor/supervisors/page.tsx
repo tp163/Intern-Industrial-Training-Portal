@@ -1,14 +1,16 @@
 "use client";
 
-import { supervisors } from "@/data/mock";
+import { useAppStore } from "@/lib/store/app-store";
 import { getInitials } from "@/lib/utils";
 import { Avatar } from "@heroui/react";
 
 export default function SupervisorDirectoryPage() {
+  const { supervisors } = useAppStore();
+
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-sm text-text-secondary">Engineering Faculty</p>
+        <p className="text-sm text-text-secondary">Supervisor Directory</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight text-text-primary md:text-3xl">
           Supervisors Directory
         </h1>

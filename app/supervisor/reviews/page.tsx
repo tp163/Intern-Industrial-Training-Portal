@@ -6,8 +6,8 @@ import { ReportStatusBadge } from "@/components/reports/report-status-badge";
 import { ContentCard, PageHeader } from "@/components/ui/page-header";
 import { TableScroll } from "@/components/ui/table-scroll";
 import { SearchBar } from "@/components/ui/search-bar";
-import { currentSupervisor } from "@/data/mock";
 import { useAppStore } from "@/lib/store/app-store";
+import { apiUpdateLogbookReport } from "@/lib/api";
 import { notifyError, notifySuccess } from "@/lib/notify";
 import { formatDate } from "@/lib/utils";
 import type { LogbookReport } from "@/types";
@@ -25,7 +25,7 @@ import {
   Textarea,
 } from "@heroui/react";
 import { Check, Eye, X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const statusOptions = [
   { key: "all", label: "All Statuses" },
@@ -35,38 +35,62 @@ const statusOptions = [
   { key: "rejected", label: "Rejected" },
 ];
 
+const reportTypeOptions = [
+  { key: "all", label: "All report types" },
+  { key: "fortnightly", label: "Fortnightly" },
+  { key: "monthly", label: "Monthly progress" },
+];
+
 export default function SupervisorReviewsPage() {
-  const { getReportsForSupervisor, reviewLogbookReport } = useAppStore();
-  const allReports = getReportsForSupervisor(currentSupervisor.id);
+  const { getReportsForSupervisor, reviewLogbookReport, currentUser, supervisors, students, loadRealData } = useAppStore();
+  const supervisorRecord = useMemo(
+    () =>
+      supervisors.find((supervisor) => supervisor.id === currentUser?.id) ??
+      supervisors.find((supervisor) => supervisor.email === currentUser?.email),
+    [currentUser?.email, currentUser?.id, supervisors]
+  );
+  const supervisorId = supervisorRecord?.id ?? currentUser?.id ?? "";
+  const allReports = getReportsForSupervisor(supervisorId);
 
   const [search, setSearch] = useState("");
   const [studentIdFilter, setStudentIdFilter] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [reportTypeFilter, setReportTypeFilter] = useState("all");
   const [selected, setSelected] = useState<LogbookReport | null>(null);
   const [reviewMode, setReviewMode] = useState<"view" | "accept" | "reject">("view");
   const [feedback, setFeedback] = useState("");
   const [marks, setMarks] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
+  useEffect(() => {
+    loadRealData();
+  }, [loadRealData, supervisorId]);
+
   const filtered = useMemo(() => {
     return allReports.filter((r) => {
       const matchesSearch =
         !search ||
         r.studentName.toLowerCase().includes(search.toLowerCase()) ||
+        (students.find((student) => student.id === r.studentId)?.studentId ?? "").toLowerCase().includes(search.toLowerCase()) ||
         r.period.toLowerCase().includes(search.toLowerCase()) ||
         r.excerpt.toLowerCase().includes(search.toLowerCase());
       const matchesStudentId =
         !studentIdFilter ||
-        r.studentName.toLowerCase().includes(studentIdFilter.toLowerCase());
+        r.studentName.toLowerCase().includes(studentIdFilter.toLowerCase()) ||
+        (students.find((student) => student.id === r.studentId)?.studentId ?? "")
+          .toLowerCase()
+          .includes(studentIdFilter.toLowerCase());
       const submitted = new Date(r.submittedAt);
       const matchesFrom = !dateFrom || submitted >= new Date(dateFrom);
       const matchesTo = !dateTo || submitted <= new Date(dateTo + "T23:59:59");
       const matchesStatus = statusFilter === "all" || r.status === statusFilter;
-      return matchesSearch && matchesStudentId && matchesFrom && matchesTo && matchesStatus;
+      const type = r.reportType ?? "fortnightly";
+      const matchesReportType = reportTypeFilter === "all" || type === reportTypeFilter;
+      return matchesSearch && matchesStudentId && matchesFrom && matchesTo && matchesStatus && matchesReportType;
     });
-  }, [allReports, search, studentIdFilter, dateFrom, dateTo, statusFilter]);
+  }, [allReports, search, studentIdFilter, dateFrom, dateTo, statusFilter, reportTypeFilter, students]);
 
   const openReview = (report: LogbookReport, mode: "view" | "accept" | "reject") => {
     setSelected(report);
@@ -82,7 +106,7 @@ export default function SupervisorReviewsPage() {
     setMarks("");
   };
 
-  const handleSaveReview = (status: "accepted" | "rejected") => {
+  const handleSaveReview = async (status: "accepted" | "rejected") => {
     if (!selected) return;
     const marksNum = Number(marks);
     if (Number.isNaN(marksNum) || marksNum < 0 || marksNum > 100) {
@@ -94,24 +118,62 @@ export default function SupervisorReviewsPage() {
       return;
     }
     setSubmitting(true);
-    setTimeout(() => {
+    try {
+      // Save to DB, then update the local store used by the UI.
+      await apiUpdateLogbookReport(selected.id, {
+        status,
+        marks: marksNum,
+        feedback: feedback.trim(),
+        reviewed_at: new Date().toISOString(),
+      });
+
       reviewLogbookReport({
         reportId: selected.id,
         status,
         marks: marksNum,
         feedback: feedback.trim(),
       });
-      setSubmitting(false);
+      await loadRealData();
       notifySuccess(`Report ${status === "accepted" ? "accepted" : "rejected"} successfully.`);
       closeModal();
-    }, 600);
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to save report review";
+      notifyError(message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleRevertToPending = async (reportId: string) => {
+    setSubmitting(true);
+    try {
+      await apiUpdateLogbookReport(reportId, {
+        status: "pending",
+        marks: null,
+        feedback: null,
+        reviewed_at: null,
+      });
+
+      reviewLogbookReport({
+        reportId,
+        status: "pending",
+      });
+      await loadRealData();
+      notifySuccess("Report reverted to pending successfully.");
+      closeModal();
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : "Failed to revert report review";
+      notifyError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Reports"
-        description="Review student logbook PDF submissions, assign marks, and set acceptance status"
+        description="Review student logbook submissions, assign marks, and set acceptance status"
       />
 
       <ContentCard>
@@ -119,7 +181,7 @@ export default function SupervisorReviewsPage() {
           <SearchBar
             value={search}
             onChange={setSearch}
-            placeholder="Search student or period..."
+            placeholder="Search student or Report Name..."
             className="md:col-span-2"
           />
           <Input
@@ -130,6 +192,15 @@ export default function SupervisorReviewsPage() {
             variant="bordered"
             radius="lg"
           />
+          <Select
+            label="Report type"
+            selectedKeys={[reportTypeFilter]}
+            onSelectionChange={(keys) => setReportTypeFilter((Array.from(keys)[0] as string) ?? "all")}
+            variant="bordered"
+            radius="lg"
+          >
+            {reportTypeOptions.map((opt) => <SelectItem key={opt.key}>{opt.label}</SelectItem>)}
+          </Select>
           <Select
             label="Status"
             selectedKeys={[statusFilter]}
@@ -149,8 +220,9 @@ export default function SupervisorReviewsPage() {
           <Table aria-label="Student logbook reports" removeWrapper>
             <TableHeader>
               <TableColumn>STUDENT</TableColumn>
-              <TableColumn>PERIOD</TableColumn>
-              <TableColumn className="hidden sm:table-cell">PDF</TableColumn>
+              <TableColumn>STUDENT ID</TableColumn>
+              <TableColumn>REPORT NAME</TableColumn>
+              <TableColumn className="hidden sm:table-cell">PDF NAME</TableColumn>
               <TableColumn>MARKS</TableColumn>
               <TableColumn>SUBMITTED</TableColumn>
               <TableColumn>STATUS</TableColumn>
@@ -162,7 +234,8 @@ export default function SupervisorReviewsPage() {
                   <TableCell>
                     <p className="font-medium">{report.studentName}</p>
                   </TableCell>
-                  <TableCell>{report.period}</TableCell>
+                  <TableCell>{students.find((student) => student.id === report.studentId)?.studentId ?? "—"}</TableCell>
+                  <TableCell><p>{report.period}</p><p className="mt-1 text-xs text-text-secondary">{report.period.toLowerCase().includes("monthly") ? "Monthly progress" : "Fortnightly"}</p></TableCell>
                   <TableCell className="hidden sm:table-cell">
                     {report.pdfFileName ?? "—"}
                   </TableCell>
@@ -187,7 +260,7 @@ export default function SupervisorReviewsPage() {
                       >
                         Review
                       </Button>
-                      {report.status === "pending" && (
+                      {report.status === "pending" ? (
                         <>
                           <Button
                             size="sm"
@@ -208,6 +281,16 @@ export default function SupervisorReviewsPage() {
                             Reject
                           </Button>
                         </>
+                      ) : (
+                        <Button
+                          size="sm"
+                          color="warning"
+                          variant="flat"
+                          isLoading={submitting}
+                          onPress={() => handleRevertToPending(report.id)}
+                        >
+                          Undo Review
+                        </Button>
                       )}
                     </div>
                   </TableCell>
@@ -291,6 +374,14 @@ export default function SupervisorReviewsPage() {
                 </Button>
                 <Button color="danger" variant="flat" startContent={<X size={16} />} onPress={() => setReviewMode("reject")}>
                   Reject Report
+                </Button>
+              </div>
+            )}
+
+            {reviewMode === "view" && selected.status !== "pending" && (
+              <div className="flex flex-wrap gap-2 border-t border-border pt-4">
+                <Button color="warning" variant="flat" isLoading={submitting} onPress={() => handleRevertToPending(selected.id)}>
+                  Revert to Pending / Undo Review
                 </Button>
               </div>
             )}

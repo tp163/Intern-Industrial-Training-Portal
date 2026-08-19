@@ -5,10 +5,13 @@ import { ContentCard, EmptyState } from "@/components/ui/page-header";
 import { PaginationBar } from "@/components/ui/pagination-bar";
 import { SearchBar } from "@/components/ui/search-bar";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { applications, currentStudent } from "@/data/mock";
+import { apiUpdateApplication } from "@/lib/api";
+import { notifyError, notifySuccess } from "@/lib/notify";
+import { useAppStore } from "@/lib/store/app-store";
 import { formatDate } from "@/lib/utils";
 import type { ApplicationStatus } from "@/types";
 import {
+  Button,
   Select,
   SelectItem,
   Table,
@@ -32,11 +35,13 @@ const statusOptions: { key: string; label: string }[] = [
 ];
 
 export default function StudentApplicationsPage() {
+  const { applications, currentUser, loadRealData } = useAppStore();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
+  const [withdrawingId, setWithdrawingId] = useState<string | null>(null);
 
-  const myApplications = applications.filter((a) => a.studentId === currentStudent.id);
+  const myApplications = applications.filter((a) => !currentUser?.id || a.studentId === currentUser.id);
 
   const filtered = useMemo(() => {
     return myApplications.filter((app) => {
@@ -52,10 +57,23 @@ export default function StudentApplicationsPage() {
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
+  const withdrawApplication = async (id: string) => {
+    setWithdrawingId(id);
+    try {
+      await apiUpdateApplication(id, { status: "withdrawn" });
+      await loadRealData();
+      notifySuccess("Application cancelled.");
+    } catch (error) {
+      notifyError(error instanceof Error ? error.message : "Failed to cancel application.");
+    } finally {
+      setWithdrawingId(null);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <PortalPageHeader
-        title="Logbook"
+        title="My Applications"
         description="Track the status of your internship applications"
       />
 
@@ -104,6 +122,7 @@ export default function StudentApplicationsPage() {
                 <TableColumn>COMPANY</TableColumn>
                 <TableColumn>APPLIED</TableColumn>
                 <TableColumn>STATUS</TableColumn>
+                <TableColumn>ACTIONS</TableColumn>
               </TableHeader>
               <TableBody>
                 {paginated.map((app) => (
@@ -115,6 +134,18 @@ export default function StudentApplicationsPage() {
                     <TableCell>{formatDate(app.appliedAt)}</TableCell>
                     <TableCell>
                       <StatusBadge status={app.status as ApplicationStatus} />
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        size="sm"
+                        variant="flat"
+                        color="danger"
+                        isDisabled={app.status === "approved" || app.status === "rejected" || app.status === "withdrawn"}
+                        isLoading={withdrawingId === app.id}
+                        onPress={() => withdrawApplication(app.id)}
+                      >
+                        Cancel
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}

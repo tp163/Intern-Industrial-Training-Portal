@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandMark } from "@/components/ui/brand-mark";
 import {
   Avatar,
   Button,
@@ -11,7 +12,7 @@ import {
 import { cn, getInitials } from "@/lib/utils";
 import { NotificationPanel } from "@/components/notifications/notification-panel";
 import type { NotificationAudience } from "@/types";
-import { ChevronDown, GraduationCap, LogOut, Menu, PanelLeft, PanelLeftClose, User, X } from "lucide-react";
+import { ChevronDown, GraduationCap, LogOut, Menu, User, X } from "lucide-react";
 import Link from "next/link";
 
 interface AppHeaderProps {
@@ -53,18 +54,15 @@ export function AppHeader({
               radius="lg"
               aria-label={mobileMenuOpen ? "Close menu" : sidebarCollapsed ? "Expand sidebar" : "Toggle sidebar"}
               onPress={onSidebarToggle}
-              className="shrink-0 text-text-secondary"
+              className="shrink-0 text-text-secondary lg:hidden"
             >
               <span className="lg:hidden">
                 <ToggleIcon size={22} />
               </span>
-              <span className="hidden lg:inline-flex">
-                {sidebarCollapsed ? <PanelLeft size={22} /> : <PanelLeftClose size={22} />}
-              </span>
             </Button>
           )}
           <div className="flex min-w-0 items-center gap-2.5">
-            <GraduationCap size={22} className="shrink-0 text-primary" strokeWidth={1.75} />
+            <BrandMark className="h-6 w-6 shrink-0 text-primary lg:hidden" />
             <span className="truncate font-sans text-base font-semibold text-text-primary sm:text-lg">
               Intern &amp; Training Portal
             </span>

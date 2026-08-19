@@ -5,7 +5,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Sidebar } from "@/components/layout/sidebar";
 import { cn } from "@/lib/utils";
 import type { NavItem, NotificationAudience } from "@/types";
-import { useCallback, useState } from "react";
+import { type CSSProperties, useCallback, useState } from "react";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -40,13 +40,14 @@ export function DashboardLayout({
 }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(260);
   const isPortal = variant === "portal";
   const showSidebar = navItems.length > 0;
-  const sidebarWidth = showSidebar
-    ? collapsed
-      ? "lg:ml-[72px]"
-      : "lg:ml-[260px]"
-    : "";
+  const desktopSidebarWidth = collapsed ? 72 : sidebarWidth;
+  const sidebarOffset = showSidebar ? "lg:ml-[var(--sidebar-width)]" : "";
+  const layoutStyle = {
+    "--sidebar-width": `${desktopSidebarWidth}px`,
+  } as CSSProperties;
 
   const handleSidebarToggle = useCallback(() => {
     if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
@@ -63,6 +64,8 @@ export function DashboardLayout({
           items={navItems}
           collapsed={collapsed}
           onToggle={handleSidebarToggle}
+          width={sidebarWidth}
+          onResize={setSidebarWidth}
           roleLabel={roleLabel}
           userName={userName}
           userRoleBadge={userRoleBadge}
@@ -100,7 +103,10 @@ export function DashboardLayout({
         />
       </div>
 
-      <div className={cn("flex min-h-screen flex-col transition-all duration-300", sidebarWidth)}>
+      <div
+        className={cn("flex min-h-screen flex-col transition-all duration-300", sidebarOffset)}
+        style={layoutStyle}
+      >
         {isPortal ? (
           <AppHeader
             userName={userName}
